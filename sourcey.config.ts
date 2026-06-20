@@ -1,20 +1,12 @@
 import { defineConfig, openapi } from "sourcey";
 
 export default defineConfig({
-  name: "Modrinth API Reference",
-  description: "Independent, source-generated reference for the public Modrinth API.",
+  name: "GitHub REST API — Gists Reference",
+  description: "Independent Sourcey reference generated from GitHub's maintained REST API description.",
   navigation: {
     tabs: [
-      { tab: "Projects", source: openapi("./generated/projects-core.yaml") },
-      { tab: "Project discovery", source: openapi("./generated/projects-discovery.yaml") },
-      { tab: "Versions", source: openapi("./generated/versions.yaml") },
-      { tab: "Version files", source: openapi("./generated/version-files.yaml") },
-      { tab: "Users", source: openapi("./generated/users.yaml") },
-      { tab: "Notifications", source: openapi("./generated/notifications.yaml") },
-      { tab: "Threads", source: openapi("./generated/threads.yaml") },
-      { tab: "Teams", source: openapi("./generated/teams.yaml") },
-      { tab: "Tags", source: openapi("./generated/tags.yaml") },
-      { tab: "Misc", source: openapi("./generated/misc.yaml") },
+      { tab: "Gists", source: openapi("./generated/gists-core.yaml") },
+      { tab: "Gist management", source: openapi("./generated/gists-management.yaml") },
     ],
   },
   theme: {

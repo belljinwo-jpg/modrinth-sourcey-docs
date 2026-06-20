@@ -1,120 +1,31 @@
-# Modrinth API Reference
+# GitHub REST API — Gists Reference
 
-> This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
+> GitHub's v3 REST API.
 
-## Projects
+## Gists
 
-- [Labrinth](/projects.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-- [Search projects](/projects.html#operation-search-get): GET /search
-- [Get a project](/projects.html#operation-project-id-slug-get): GET /project/{id|slug}
-- [Delete a project](/projects.html#operation-project-id-slug-delete): DELETE /project/{id|slug}
-- [Modify a project](/projects.html#operation-project-id-slug-patch): PATCH /project/{id|slug}
-- [Get multiple projects](/projects.html#operation-projects-get): GET /projects
-- [Bulk-edit multiple projects](/projects.html#operation-projects-patch): PATCH /projects
-- [Get a list of random projects](/projects.html#operation-projects-random-get): GET /projects_random
-- [Create a project](/projects.html#operation-project-post): POST /project
-- [Change project's icon](/projects.html#operation-project-id-slug-icon-patch): PATCH /project/{id|slug}/icon - The new icon may be up to 256KiB in size.
+- [GitHub v3 REST API](/gists.html): GitHub's v3 REST API.
+- [List gists for the authenticated user](/gists.html#operation-gists-get): GET /gists - Lists the authenticated user's gists or if called anonymously, this endpoint returns all public gists:
+- [Create a gist](/gists.html#operation-gists-post): POST /gists - Allows you to add a new gist with one or more files.
+- [List public gists](/gists.html#operation-gists-public-get): GET /gists/public - List public gists sorted by most recently updated to least recently updated.
+- [List starred gists](/gists.html#operation-gists-starred-get): GET /gists/starred - List the authenticated user's starred gists:
+- [Get a gist](/gists.html#operation-gists-gist-id-get): GET /gists/{gist_id} - Gets a specified gist.
+- [Delete a gist](/gists.html#operation-gists-gist-id-delete): DELETE /gists/{gist_id}
+- [Update a gist](/gists.html#operation-gists-gist-id-patch): PATCH /gists/{gist_id} - Allows you to update a gist's description and to update, delete, or rename gist files. Files
+- [List gist comments](/gists.html#operation-gists-gist-id-comments-get): GET /gists/{gist_id}/comments - Lists the comments on a gist.
+- [Create a gist comment](/gists.html#operation-gists-gist-id-comments-post): POST /gists/{gist_id}/comments - Creates a comment on a gist.
+- [Get a gist comment](/gists.html#operation-gists-gist-id-comments-comment-id-get): GET /gists/{gist_id}/comments/{comment_id} - Gets a comment on a gist.
 
-## Project discovery
+## Gist management
 
-- [Labrinth](/project-discovery.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-- [Delete project's icon](/project-discovery.html#operation-project-id-slug-icon-delete): DELETE /project/{id|slug}/icon
-- [Check project slug/ID validity](/project-discovery.html#operation-project-id-slug-check-get): GET /project/{id|slug}/check
-- [Add a gallery image](/project-discovery.html#operation-project-id-slug-gallery-post): POST /project/{id|slug}/gallery - Modrinth allows you to upload files of up to 5MiB to a project's gallery.
-- [Delete a gallery image](/project-discovery.html#operation-project-id-slug-gallery-delete): DELETE /project/{id|slug}/gallery
-- [Modify a gallery image](/project-discovery.html#operation-project-id-slug-gallery-patch): PATCH /project/{id|slug}/gallery
-- [Get all of a project's dependencies](/project-discovery.html#operation-project-id-slug-dependencies-get): GET /project/{id|slug}/dependencies
-- [Follow a project](/project-discovery.html#operation-project-id-slug-follow-post): POST /project/{id|slug}/follow
-- [Unfollow a project](/project-discovery.html#operation-project-id-slug-follow-delete): DELETE /project/{id|slug}/follow
-- [Schedule a project](/project-discovery.html#operation-project-id-slug-schedule-post): POST /project/{id|slug}/schedule
-
-## Versions
-
-- [Labrinth](/versions.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-- [List project's versions](/versions.html#operation-project-id-slug-version-get): GET /project/{id|slug}/version
-- [Get a version](/versions.html#operation-version-id-get): GET /version/{id}
-- [Delete a version](/versions.html#operation-version-id-delete): DELETE /version/{id}
-- [Modify a version](/versions.html#operation-version-id-patch): PATCH /version/{id}
-- [Get a version given a version number or ID](/versions.html#operation-project-id-slug-version-id-number-get): GET /project/{id|slug}/version/{id|number} - Please note that, if the version number provided matches multiple versions, only the **oldest matching version** will be returned.
-- [Create a version](/versions.html#operation-version-post): POST /version - This route creates a version on an existing project. There must be at least one file attached to each new version, unless the new version's status is `draft`. `.mrpack`, `.jar`, `.zip`, and `.litemod` files are accepted.
-- [Schedule a version](/versions.html#operation-version-id-schedule-post): POST /version/{id}/schedule
-- [Get multiple versions](/versions.html#operation-versions-get): GET /versions
-- [Add files to version](/versions.html#operation-version-id-file-post): POST /version/{id}/file - Project files are attached. `.mrpack` and `.jar` files are accepted.
-
-## Version files
-
-- [Labrinth](/version-files.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-- [Get version from hash](/version-files.html#operation-version-file-hash-get): GET /version_file/{hash}
-- [Delete a file from its hash](/version-files.html#operation-version-file-hash-delete): DELETE /version_file/{hash}
-- [Latest version of a project from a hash, loader(s), and game version(s)](/version-files.html#operation-version-file-hash-update-post): POST /version_file/{hash}/update
-- [Get versions from hashes](/version-files.html#operation-version-files-post): POST /version_files - This is the same as [`/version_file/{hash}`](#operation/versionFromHash) except it accepts multiple hashes.
-- [Latest versions of multiple project from hashes, loader(s), and game version(s)](/version-files.html#operation-version-files-update-post): POST /version_files/update - This is the same as [`/version_file/{hash}/update`](#operation/getLatestVersionFromHash) except it accepts multiple hashes.
-
-## Users
-
-- [Labrinth](/users.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-- [Get a user](/users.html#operation-user-id-username-get): GET /user/{id|username}
-- [Modify a user](/users.html#operation-user-id-username-patch): PATCH /user/{id|username}
-- [Get user from authorization header](/users.html#operation-user-get): GET /user
-- [Get multiple users](/users.html#operation-users-get): GET /users
-- [Remove user's avatar](/users.html#operation-user-id-username-icon-delete): DELETE /user/{id|username}/icon
-- [Change user's avatar](/users.html#operation-user-id-username-icon-patch): PATCH /user/{id|username}/icon - The new avatar may be up to 2MiB in size.
-- [Get user's projects](/users.html#operation-user-id-username-projects-get): GET /user/{id|username}/projects
-- [Get user's followed projects](/users.html#operation-user-id-username-follows-get): GET /user/{id|username}/follows
-- [Get user's payout history](/users.html#operation-user-id-username-payouts-get): GET /user/{id|username}/payouts
-- [Withdraw payout balance to PayPal or Venmo](/users.html#operation-user-id-username-payouts-post): POST /user/{id|username}/payouts - Warning: certain amounts get withheld for fees. Please do not call this API endpoint without first acknowledging the warnings on the corresponding frontend page.
-
-## Notifications
-
-- [Labrinth](/notifications.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-- [Get user's notifications](/notifications.html#operation-user-id-username-notifications-get): GET /user/{id|username}/notifications
-- [Get notification from ID](/notifications.html#operation-notification-id-get): GET /notification/{id}
-- [Delete notification](/notifications.html#operation-notification-id-delete): DELETE /notification/{id}
-- [Mark notification as read](/notifications.html#operation-notification-id-patch): PATCH /notification/{id}
-- [Get multiple notifications](/notifications.html#operation-notifications-get): GET /notifications
-- [Delete multiple notifications](/notifications.html#operation-notifications-delete): DELETE /notifications
-- [Mark multiple notifications as read](/notifications.html#operation-notifications-patch): PATCH /notifications
-
-## Threads
-
-- [Labrinth](/threads.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-- [Get your open reports](/threads.html#operation-report-get): GET /report
-- [Report a project, user, or version](/threads.html#operation-report-post): POST /report - Bring a project, user, or version to the attention of the moderators by reporting it.
-- [Get report from ID](/threads.html#operation-report-id-get): GET /report/{id}
-- [Modify a report](/threads.html#operation-report-id-patch): PATCH /report/{id}
-- [Get multiple reports](/threads.html#operation-reports-get): GET /reports
-- [Get a thread](/threads.html#operation-thread-id-get): GET /thread/{id}
-- [Send a text message to a thread](/threads.html#operation-thread-id-post): POST /thread/{id}
-- [Get multiple threads](/threads.html#operation-threads-get): GET /threads
-- [Delete a thread message](/threads.html#operation-message-id-delete): DELETE /message/{id}
-
-## Teams
-
-- [Labrinth](/teams.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-- [Get a project's team members](/teams.html#operation-project-id-slug-members-get): GET /project/{id|slug}/members
-- [Get a team's members](/teams.html#operation-team-id-members-get): GET /team/{id}/members
-- [Add a user to a team](/teams.html#operation-team-id-members-post): POST /team/{id}/members
-- [Get the members of multiple teams](/teams.html#operation-teams-get): GET /teams
-- [Join a team](/teams.html#operation-team-id-join-post): POST /team/{id}/join
-- [Remove a member from a team](/teams.html#operation-team-id-members-id-username-delete): DELETE /team/{id}/members/{id|username}
-- [Modify a team member's information](/teams.html#operation-team-id-members-id-username-patch): PATCH /team/{id}/members/{id|username}
-- [Transfer team's ownership to another user](/teams.html#operation-team-id-owner-patch): PATCH /team/{id}/owner
-
-## Tags
-
-- [Labrinth](/tags.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-- [Get a list of categories](/tags.html#operation-tag-category-get): GET /tag/category - Gets an array of categories, their icons, and applicable project types
-- [Get a list of loaders](/tags.html#operation-tag-loader-get): GET /tag/loader - Gets an array of loaders, their icons, and supported project types
-- [Get a list of game versions](/tags.html#operation-tag-game-version-get): GET /tag/game_version - Gets an array of game versions and information about them
-- [Get a list of licenses](/tags.html#operation-tag-license-get): GET /tag/license - Deprecated - simply use SPDX IDs.
-- [Get the text and title of a license](/tags.html#operation-tag-license-id-get): GET /tag/license/{id}
-- [Get a list of donation platforms](/tags.html#operation-tag-donation-platform-get): GET /tag/donation_platform - Gets an array of donation platforms and information about them
-- [Get a list of report types](/tags.html#operation-tag-report-type-get): GET /tag/report_type - Gets an array of valid report types
-- [Get a list of project types](/tags.html#operation-tag-project-type-get): GET /tag/project_type - Gets an array of valid project types
-- [Get a list of side types](/tags.html#operation-tag-side-type-get): GET /tag/side_type - Gets an array of valid side types
-
-## Misc
-
-- [Labrinth](/misc.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-- [Forge Updates JSON file](/misc.html#operation-updates-id-slug-forge-updates-json-get): GET /updates/{id|slug}/forge_updates.json - If you're a Forge mod developer, your Modrinth mods have an automatically generated `updates.json` using the
-- [Various statistics about this Modrinth instance](/misc.html#operation-statistics-get): GET /statistics
+- [GitHub v3 REST API](/gist-management.html): GitHub's v3 REST API.
+- [Delete a gist comment](/gist-management.html#operation-gists-gist-id-comments-comment-id-delete): DELETE /gists/{gist_id}/comments/{comment_id}
+- [Update a gist comment](/gist-management.html#operation-gists-gist-id-comments-comment-id-patch): PATCH /gists/{gist_id}/comments/{comment_id} - Updates a comment on a gist.
+- [List gist commits](/gist-management.html#operation-gists-gist-id-commits-get): GET /gists/{gist_id}/commits
+- [List gist forks](/gist-management.html#operation-gists-gist-id-forks-get): GET /gists/{gist_id}/forks
+- [Fork a gist](/gist-management.html#operation-gists-gist-id-forks-post): POST /gists/{gist_id}/forks
+- [Check if a gist is starred](/gist-management.html#operation-gists-gist-id-star-get): GET /gists/{gist_id}/star
+- [Star a gist](/gist-management.html#operation-gists-gist-id-star-put): PUT /gists/{gist_id}/star - Note that you'll need to set `Content-Length` to zero when calling out to this endpoint. For more information, see "[HTTP method](https://docs.github.com/rest/guides/getting-started-with-the-rest-api#http-method)."
+- [Unstar a gist](/gist-management.html#operation-gists-gist-id-star-delete): DELETE /gists/{gist_id}/star
+- [Get a gist revision](/gist-management.html#operation-gists-gist-id-sha-get): GET /gists/{gist_id}/{sha} - Gets a specified gist revision.
+- [List gists for a user](/gist-management.html#operation-users-username-gists-get): GET /users/{username}/gists - Lists public gists for the specified user:

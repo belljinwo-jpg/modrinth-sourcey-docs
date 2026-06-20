@@ -31,5 +31,5 @@ for (const page of await htmlFiles("dist")) {
 
 await writeFile(
   "dist/index.html",
-  '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/projects.html"><title>Modrinth API Reference</title></head><body><a href="/projects.html">Open the Modrinth API reference</a></body></html>',
+  '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/gists.html"><title>GitHub REST API — Gists Reference</title></head><body><a href="/gists.html">Open the GitHub Gists API reference</a></body></html>',
 );

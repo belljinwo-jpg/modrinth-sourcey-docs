@@ -1,10 +1,11 @@
-# Modrinth API documentation generated with Sourcey
+# GitHub Gists REST documentation generated with Sourcey
 
-This project builds a static, searchable reference for the real Modrinth API
-from the upstream OpenAPI specification at the pinned `modrinth/code` commit
-recorded in `evidence.json`.
+This repository builds a static, searchable Sourcey reference for twenty real
+GitHub Gists REST operations from GitHub's maintained, MIT-licensed
+`github/rest-api-description` repository at the immutable commit recorded in
+`evidence.json`.
 
-Live reference: https://modrinth-sourcey-reference.surge.sh/
+Live reference: https://github-gists-sourcey-docs.surge.sh/
 
 ## Build
 
@@ -13,12 +14,13 @@ pnpm install --frozen-lockfile
 pnpm run build
 ```
 
-The generated and minified site is written to `dist/`. Ten focused Sourcey pages contain 77 real API operations,
-well above the bounty's minimum of 20, plus the upstream schemas and examples.
+The build splits the Gists surface into two focused pages, recursively includes
+only referenced OpenAPI components, minifies the generated HTML, and emits
+search plus `llms.txt` context files. Hashes and reproducibility evidence are in
+`evidence.json`.
 
-## Verify
+## Validate
 
-Serve `dist/` with any static server and open `/`. Confirm that endpoint links
-such as `GET /search` navigate to their operation anchors and that search finds
-endpoint and model entries. Hashes, the exact upstream commit, adapter, source
-file, and generated page list are recorded in `evidence.json`.
+The companion `sourcey-validation` runx skill fetches the public site and
+evidence bundle, checks the pinned MIT source, operation coverage, summary, and
+observations, and seals the validation result in a runx receipt.

@@ -3,30 +3,18 @@ import yaml from "js-yaml";
 
 const source = yaml.load(await readFile("openapi.yaml", "utf8"));
 const verbs = new Set(["get", "post", "put", "patch", "delete", "options", "head", "trace"]);
-const aliases = new Map([
-  ["versions", "versions"],
-  ["version-files", "version-files"],
-  ["users", "users"],
-  ["notifications", "notifications"],
-  ["threads", "threads"],
-  ["teams", "teams"],
-  ["tags", "tags"],
-  ["misc", "misc"],
-]);
-
-const groups = ["projects-core", "projects-discovery", ...aliases.values()];
+const groups = ["gists-core", "gists-management"];
 
 const groupedPaths = new Map(groups.map((group) => [group, {}]));
 const operationCounts = Object.fromEntries(groups.map((group) => [group, 0]));
-let projectOperationIndex = 0;
+let gistOperationIndex = 0;
 
 for (const [path, item] of Object.entries(source.paths ?? {})) {
   for (const [method, operation] of Object.entries(item ?? {})) {
     if (!verbs.has(method)) continue;
     const rawTag = String(operation.tags?.[0] ?? "misc").toLowerCase();
-    const group = rawTag === "projects"
-      ? (projectOperationIndex++ < 9 ? "projects-core" : "projects-discovery")
-      : (aliases.get(rawTag) ?? "misc");
+    if (rawTag !== "gists") continue;
+    const group = gistOperationIndex++ < 10 ? "gists-core" : "gists-management";
     const target = (groupedPaths.get(group)[path] ??= {});
     if (item.parameters) target.parameters = structuredClone(item.parameters);
     target[method] = structuredClone(operation);

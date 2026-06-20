@@ -1,2792 +1,395 @@
-# Modrinth API Reference
+# GitHub REST API — Gists Reference
 
-This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
+GitHub's v3 REST API.
 
-- [cURL](https://curl.se/) (recommended, command-line)
-- [ReqBIN](https://reqbin.com/) (recommended, online)
-- [Postman](https://www.postman.com/downloads/)
-- [Insomnia](https://insomnia.rest/)
-- Your web browser, if you don't need to send headers or a request body
+## Gists
 
-Once you have a working client, you can test that it works by making a `GET` request to `https://staging-api.modrinth.com/`:
+### GitHub v3 REST API
 
-```json
-{
-  "about": "Welcome traveler!",
-  "documentation": "https://docs.modrinth.com",
-  "name": "modrinth-labrinth",
-  "version": "2.7.0"
-}
-```
+Path: `/gists.html`
+Version: 1.1.4
 
-If you got a response similar to the one above, you can use the Modrinth API!
-When you want to go live using the production API, use `api.modrinth.com` instead of `staging-api.modrinth.com`.
-
-## Authentication
-This API has two options for authentication: personal access tokens and [OAuth2](https://en.wikipedia.org/wiki/OAuth).
-All tokens are tied to a Modrinth user and use the `Authorization` header of the request.
-
-Example:
-```
-Authorization: mrp_RNtLRSPmGj2pd1v1ubi52nX7TJJM9sznrmwhAuj511oe4t1jAqAQ3D6Wc8Ic
-```
-
-You do not need a token for most requests. Generally speaking, only the following types of requests require a token:
-- those which create data (such as version creation)
-- those which modify data (such as editing a project)
-- those which access private data (such as draft projects, notifications, emails, and payout data)
-
-Each request requiring authentication has a certain scope. For example, to view the email of the user being requested, the token must have the `USER_READ_EMAIL` scope.
-You can find the list of available scopes [on GitHub](https://github.com/modrinth/labrinth/blob/master/src/models/pats.rs#L15). Making a request with an invalid scope will return a 401 error.
-
-Please note that certain scopes and requests cannot be completed with a personal access token or using OAuth.
-For example, deleting a user account can only be done through Modrinth's frontend.
-
-A detailed guide on OAuth has been published in [Modrinth's technical documentation](https://docs.modrinth.com/guide/oauth).
-
-### Personal access tokens
-Personal access tokens (PATs) can be generated in from [the user settings](https://modrinth.com/settings/account).
-
-### GitHub tokens
-For backwards compatibility purposes, some types of GitHub tokens also work for authenticating a user with Modrinth's API, granting all scopes.
-**We urge any application still using GitHub tokens to start using personal access tokens for security and reliability purposes.**
-GitHub tokens will cease to function to authenticate with Modrinth's API as soon as version 3 of the API is made generally available.
-
-## Cross-Origin Resource Sharing
-This API features Cross-Origin Resource Sharing (CORS) implemented in compliance with the [W3C spec](https://www.w3.org/TR/cors/).
-This allows for cross-domain communication from the browser.
-All responses have a wildcard same-origin which makes them completely public and accessible to everyone, including any code on any site.
-
-## Identifiers
-The majority of items you can interact with in the API have a unique eight-digit base62 ID.
-Projects, versions, users, threads, teams, and reports all use this same way of identifying themselves.
-Version files use the sha1 or sha512 file hashes as identifiers.
-
-Each project and user has a friendlier way of identifying them; slugs and usernames, respectively.
-While unique IDs are constant, slugs and usernames can change at any moment.
-If you want to store something in the long term, it is recommended to use the unique ID.
-
-## Ratelimits
-The API has a ratelimit defined per IP. Limits and remaining amounts are given in the response headers.
-- `X-Ratelimit-Limit`: the maximum number of requests that can be made in a minute
-- `X-Ratelimit-Remaining`: the number of requests remaining in the current ratelimit window
-- `X-Ratelimit-Reset`: the time in seconds until the ratelimit window resets
-
-Ratelimits are the same no matter whether you use a token or not.
-The ratelimit is currently 300 requests per minute. If you have a use case requiring a higher limit, please [contact us](mailto:support@modrinth.com).
-
-## User Agents
-To access the Modrinth API, you **must** use provide a uniquely-identifying `User-Agent` header.
-Providing a user agent that only identifies your HTTP client library (such as "okhttp/4.9.3") increases the likelihood that we will block your traffic.
-It is recommended, but not required, to include contact information in your user agent.
-This allows us to contact you if we would like a change in your application's behavior without having to block your traffic.
-- Bad: `User-Agent: okhttp/4.9.3`
-- Good: `User-Agent: project_name`
-- Better: `User-Agent: github_username/project_name/1.56.0`
-- Best: `User-Agent: github_username/project_name/1.56.0 (launcher.com)` or `User-Agent: github_username/project_name/1.56.0 (contact@launcher.com)`
-
-## Versioning
-Modrinth follows a simple pattern for its API versioning.
-In the event of a breaking API change, the API version in the URL path is bumped, and migration steps will be published below.
-
-When an API is no longer the current one, it will immediately be considered deprecated.
-No more support will be provided for API versions older than the current one.
-It will be kept for some time, but this amount of time is not certain.
-
-We will exercise various tactics to get people to update their implementation of our API.
-One example is by adding something like `STOP USING THIS API` to various data returned by the API.
-
-Once an API version is completely deprecated, it will permanently return a 410 error.
-Please ensure your application handles these 410 errors.
-
-### Migrations
-Inside the following spoiler, you will be able to find all changes between versions of the Modrinth API, accompanied by tips and a guide to migrate applications to newer versions.
-
-Here, you can also find changes for [Minotaur](https://github.com/modrinth/minotaur), Modrinth's official Gradle plugin. Major versions of Minotaur directly correspond to major versions of the Modrinth API.
-
-<details><summary>API v1 to API v2</summary>
-
-These bullet points cover most changes in the v2 API, but please note that fields containing `mod` in most contexts have been shifted to `project`.  For example, in the search route, the field `mod_id` was renamed to `project_id`.
-
-- The search route has been moved from `/api/v1/mod` to `/v2/search`
-- New project fields: `project_type` (may be `mod` or `modpack`), `moderation_message` (which has a `message` and `body`), `gallery`
-- New search facet: `project_type`
-- Alphabetical sort removed (it didn't work and is not possible due to limits in MeiliSearch)
-- New search fields: `project_type`, `gallery`
-  - The gallery field is an array of URLs to images that are part of the project's gallery
-- The gallery is a new feature which allows the user to upload images showcasing their mod to the CDN which will be displayed on their mod page
-- Internal change: Any project file uploaded to Modrinth is now validated to make sure it's a valid Minecraft mod, Modpack, etc.
-  - For example, a Forge 1.17 mod with a JAR not containing a mods.toml will not be allowed to be uploaded to Modrinth
-- In project creation, projects may not upload a mod with no versions to review, however they can be saved as a draft
-  - Similarly, for version creation, a version may not be uploaded without any files
-- Donation URLs have been enabled
-- New project status: `archived`. Projects with this status do not appear in search
-- Tags (such as categories, loaders) now have icons (SVGs) and specific project types attached
-- Dependencies have been wiped and replaced with a new system
-- Notifications now have a `type` field, such as `project_update`
-
-Along with this, project subroutes (such as `/v2/project/{id}/version`) now allow the slug to be used as the ID. This is also the case with user routes.
-
-</details><details><summary>Minotaur v1 to Minotaur v2</summary>
-
-Minotaur 2.x introduced a few breaking changes to how your buildscript is formatted.
-
-First, instead of registering your own `publishModrinth` task, Minotaur now automatically creates a `modrinth` task. As such, you can replace the `task publishModrinth(type: TaskModrinthUpload) {` line with just `modrinth {`.
-
-To declare supported Minecraft versions and mod loaders, the `gameVersions` and `loaders` arrays must now be used. The syntax for these are pretty self-explanatory.
-
-Instead of using `releaseType`, you must now use `versionType`. This was actually changed in v1.2.0, but very few buildscripts have moved on from v1.1.0.
-
-Dependencies have been changed to a special DSL. Create a `dependencies` block within the `modrinth` block, and then use `scope.type("project/version")`. For example, `required.project("fabric-api")` adds a required project dependency on Fabric API.
-
-You may now use the slug anywhere that a project ID was previously required.
-
-</details>
-
-
-## Projects
-
-### Labrinth
-
-Path: `/projects.html`
-Version: v2.7.0/366f528
-
-This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-
-- [cURL](https://curl.se/) (recommended, command-line)
-- [ReqBIN](https://reqbin.com/) (recommended, online)
-- [Postman](https://www.postman.com/downloads/)
-- [Insomnia](https://insomnia.rest/)
-- Your web browser, if you don't need to send headers or a request body
-
-Once you have a working client, you can test that it works by making a `GET` request to `https://staging-api.modrinth.com/`:
-
-```json
-{
-  "about": "Welcome traveler!",
-  "documentation": "https://docs.modrinth.com",
-  "name": "modrinth-labrinth",
-  "version": "2.7.0"
-}
-```
-
-If you got a response similar to the one above, you can use the Modrinth API!
-When you want to go live using the production API, use `api.modrinth.com` instead of `staging-api.modrinth.com`.
-
-## Authentication
-This API has two options for authentication: personal access tokens and [OAuth2](https://en.wikipedia.org/wiki/OAuth).
-All tokens are tied to a Modrinth user and use the `Authorization` header of the request.
-
-Example:
-```
-Authorization: mrp_RNtLRSPmGj2pd1v1ubi52nX7TJJM9sznrmwhAuj511oe4t1jAqAQ3D6Wc8Ic
-```
-
-You do not need a token for most requests. Generally speaking, only the following types of requests require a token:
-- those which create data (such as version creation)
-- those which modify data (such as editing a project)
-- those which access private data (such as draft projects, notifications, emails, and payout data)
-
-Each request requiring authentication has a certain scope. For example, to view the email of the user being requested, the token must have the `USER_READ_EMAIL` scope.
-You can find the list of available scopes [on GitHub](https://github.com/modrinth/labrinth/blob/master/src/models/pats.rs#L15). Making a request with an invalid scope will return a 401 error.
-
-Please note that certain scopes and requests cannot be completed with a personal access token or using OAuth.
-For example, deleting a user account can only be done through Modrinth's frontend.
-
-A detailed guide on OAuth has been published in [Modrinth's technical documentation](https://docs.modrinth.com/guide/oauth).
-
-### Personal access tokens
-Personal access tokens (PATs) can be generated in from [the user settings](https://modrinth.com/settings/account).
-
-### GitHub tokens
-For backwards compatibility purposes, some types of GitHub tokens also work for authenticating a user with Modrinth's API, granting all scopes.
-**We urge any application still using GitHub tokens to start using personal access tokens for security and reliability purposes.**
-GitHub tokens will cease to function to authenticate with Modrinth's API as soon as version 3 of the API is made generally available.
-
-## Cross-Origin Resource Sharing
-This API features Cross-Origin Resource Sharing (CORS) implemented in compliance with the [W3C spec](https://www.w3.org/TR/cors/).
-This allows for cross-domain communication from the browser.
-All responses have a wildcard same-origin which makes them completely public and accessible to everyone, including any code on any site.
-
-## Identifiers
-The majority of items you can interact with in the API have a unique eight-digit base62 ID.
-Projects, versions, users, threads, teams, and reports all use this same way of identifying themselves.
-Version files use the sha1 or sha512 file hashes as identifiers.
-
-Each project and user has a friendlier way of identifying them; slugs and usernames, respectively.
-While unique IDs are constant, slugs and usernames can change at any moment.
-If you want to store something in the long term, it is recommended to use the unique ID.
-
-## Ratelimits
-The API has a ratelimit defined per IP. Limits and remaining amounts are given in the response headers.
-- `X-Ratelimit-Limit`: the maximum number of requests that can be made in a minute
-- `X-Ratelimit-Remaining`: the number of requests remaining in the current ratelimit window
-- `X-Ratelimit-Reset`: the time in seconds until the ratelimit window resets
-
-Ratelimits are the same no matter whether you use a token or not.
-The ratelimit is currently 300 requests per minute. If you have a use case requiring a higher limit, please [contact us](mailto:support@modrinth.com).
-
-## User Agents
-To access the Modrinth API, you **must** use provide a uniquely-identifying `User-Agent` header.
-Providing a user agent that only identifies your HTTP client library (such as "okhttp/4.9.3") increases the likelihood that we will block your traffic.
-It is recommended, but not required, to include contact information in your user agent.
-This allows us to contact you if we would like a change in your application's behavior without having to block your traffic.
-- Bad: `User-Agent: okhttp/4.9.3`
-- Good: `User-Agent: project_name`
-- Better: `User-Agent: github_username/project_name/1.56.0`
-- Best: `User-Agent: github_username/project_name/1.56.0 (launcher.com)` or `User-Agent: github_username/project_name/1.56.0 (contact@launcher.com)`
-
-## Versioning
-Modrinth follows a simple pattern for its API versioning.
-In the event of a breaking API change, the API version in the URL path is bumped, and migration steps will be published below.
-
-When an API is no longer the current one, it will immediately be considered deprecated.
-No more support will be provided for API versions older than the current one.
-It will be kept for some time, but this amount of time is not certain.
-
-We will exercise various tactics to get people to update their implementation of our API.
-One example is by adding something like `STOP USING THIS API` to various data returned by the API.
-
-Once an API version is completely deprecated, it will permanently return a 410 error.
-Please ensure your application handles these 410 errors.
-
-### Migrations
-Inside the following spoiler, you will be able to find all changes between versions of the Modrinth API, accompanied by tips and a guide to migrate applications to newer versions.
-
-Here, you can also find changes for [Minotaur](https://github.com/modrinth/minotaur), Modrinth's official Gradle plugin. Major versions of Minotaur directly correspond to major versions of the Modrinth API.
-
-<details><summary>API v1 to API v2</summary>
-
-These bullet points cover most changes in the v2 API, but please note that fields containing `mod` in most contexts have been shifted to `project`.  For example, in the search route, the field `mod_id` was renamed to `project_id`.
-
-- The search route has been moved from `/api/v1/mod` to `/v2/search`
-- New project fields: `project_type` (may be `mod` or `modpack`), `moderation_message` (which has a `message` and `body`), `gallery`
-- New search facet: `project_type`
-- Alphabetical sort removed (it didn't work and is not possible due to limits in MeiliSearch)
-- New search fields: `project_type`, `gallery`
-  - The gallery field is an array of URLs to images that are part of the project's gallery
-- The gallery is a new feature which allows the user to upload images showcasing their mod to the CDN which will be displayed on their mod page
-- Internal change: Any project file uploaded to Modrinth is now validated to make sure it's a valid Minecraft mod, Modpack, etc.
-  - For example, a Forge 1.17 mod with a JAR not containing a mods.toml will not be allowed to be uploaded to Modrinth
-- In project creation, projects may not upload a mod with no versions to review, however they can be saved as a draft
-  - Similarly, for version creation, a version may not be uploaded without any files
-- Donation URLs have been enabled
-- New project status: `archived`. Projects with this status do not appear in search
-- Tags (such as categories, loaders) now have icons (SVGs) and specific project types attached
-- Dependencies have been wiped and replaced with a new system
-- Notifications now have a `type` field, such as `project_update`
-
-Along with this, project subroutes (such as `/v2/project/{id}/version`) now allow the slug to be used as the ID. This is also the case with user routes.
-
-</details><details><summary>Minotaur v1 to Minotaur v2</summary>
-
-Minotaur 2.x introduced a few breaking changes to how your buildscript is formatted.
-
-First, instead of registering your own `publishModrinth` task, Minotaur now automatically creates a `modrinth` task. As such, you can replace the `task publishModrinth(type: TaskModrinthUpload) {` line with just `modrinth {`.
-
-To declare supported Minecraft versions and mod loaders, the `gameVersions` and `loaders` arrays must now be used. The syntax for these are pretty self-explanatory.
-
-Instead of using `releaseType`, you must now use `versionType`. This was actually changed in v1.2.0, but very few buildscripts have moved on from v1.1.0.
-
-Dependencies have been changed to a special DSL. Create a `dependencies` block within the `modrinth` block, and then use `scope.type("project/version")`. For example, `required.project("fabric-api")` adds a required project dependency on Fabric API.
-
-You may now use the slug anywhere that a project ID was previously required.
-
-</details>
-
+GitHub's v3 REST API.
 
 #### Operations
 
-##### GET /search
+##### GET /gists
 
-Summary: Search projects
+Summary: List gists for the authenticated user
+
+Lists the authenticated user's gists or if called anonymously, this endpoint returns all public gists:
 
 Parameters:
-- `query` (query, string, optional) - The query to search for
-- `facets` (query, string, optional) - Facets are an essential concept for understanding how to filter out results.
-- `index` (query, string, optional) - The sorting method used for sorting search results
-- `offset` (query, integer, optional) - The offset into the search. Skips this number of results
-- `limit` (query, integer, optional) - The number of results returned by the search
+- `since` (query, string, optional) - Only show results that were last updated after the given time. This is a timestamp in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format: `YYYY-MM-DDTHH:MM:SSZ`.
+- `per_page` (query, integer, optional) - The number of results per page (max 100). For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
+- `page` (query, integer, optional) - The page number of the results to fetch. For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
 
 Responses:
-- 200: Expected response to a valid request
-- 400: Request was invalid, see given error
+- 200: Response
+- 304: Not modified
+- 403: Forbidden
 
-##### GET /project/{id|slug}
+##### POST /gists
 
-Summary: Get a project
+Summary: Create a gist
 
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
+Allows you to add a new gist with one or more files.
 
-Responses:
-- 200: Expected response to a valid request
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### DELETE /project/{id|slug}
-
-Summary: Delete a project
-
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
-
-Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-
-##### PATCH /project/{id|slug}
-
-Summary: Modify a project
-
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
+> [!NOTE]
+> Don't name your files "gistfile" with a numerical suffix. This is the format of the automatic naming scheme that Gist uses internally.
 
 Request body: application/json
 
 Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
+- 201: Response
+- 304: Not modified
+- 403: Forbidden
+- 404: Resource not found
+- 422: Validation failed, or the endpoint has been spammed.
 
-##### GET /projects
+##### GET /gists/public
 
-Summary: Get multiple projects
+Summary: List public gists
+
+List public gists sorted by most recently updated to least recently updated.
+
+Note: With [pagination](https://docs.github.com/rest/guides/using-pagination-in-the-rest-api), you can fetch up to 3000 gists. For example, you can fetch 100 pages with 30 gists per page or 30 pages with 100 gists per page.
 
 Parameters:
-- `ids` (query, string, required) - The IDs and/or slugs of the projects
+- `since` (query, string, optional) - Only show results that were last updated after the given time. This is a timestamp in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format: `YYYY-MM-DDTHH:MM:SSZ`.
+- `per_page` (query, integer, optional) - The number of results per page (max 100). For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
+- `page` (query, integer, optional) - The page number of the results to fetch. For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
 
 Responses:
-- 200: Expected response to a valid request
+- 200: Response
+- 304: Not modified
+- 403: Forbidden
+- 422: Validation failed, or the endpoint has been spammed.
 
-##### PATCH /projects
+##### GET /gists/starred
 
-Summary: Bulk-edit multiple projects
+Summary: List starred gists
+
+List the authenticated user's starred gists:
 
 Parameters:
-- `ids` (query, string, required) - The IDs and/or slugs of the projects
+- `since` (query, string, optional) - Only show results that were last updated after the given time. This is a timestamp in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format: `YYYY-MM-DDTHH:MM:SSZ`.
+- `per_page` (query, integer, optional) - The number of results per page (max 100). For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
+- `page` (query, integer, optional) - The page number of the results to fetch. For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
+
+Responses:
+- 200: Response
+- 304: Not modified
+- 401: Requires authentication
+- 403: Forbidden
+
+##### GET /gists/{gist_id}
+
+Summary: Get a gist
+
+Gets a specified gist.
+
+This endpoint supports the following custom media types. For more information, see "[Media types](https://docs.github.com/rest/using-the-rest-api/getting-started-with-the-rest-api#media-types)."
+
+- **`application/vnd.github.raw+json`**: Returns the raw markdown. This is the default if you do not pass any specific media type.
+
+Parameters:
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+
+Responses:
+- 200: Response
+- 304: Not modified
+- 403: Forbidden Gist
+- 404: Resource not found
+
+##### DELETE /gists/{gist_id}
+
+Summary: Delete a gist
+
+Parameters:
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+
+Responses:
+- 204: Response
+- 304: Not modified
+- 403: Forbidden
+- 404: Resource not found
+
+##### PATCH /gists/{gist_id}
+
+Summary: Update a gist
+
+Allows you to update a gist's description and to update, delete, or rename gist files. Files
+from the previous version of the gist that aren't explicitly changed during an edit
+are unchanged.
+
+At least one of `description` or `files` is required.
+
+This endpoint supports the following custom media types. For more information, see "[Media types](https://docs.github.com/rest/using-the-rest-api/getting-started-with-the-rest-api#media-types)."
+
+- **`application/vnd.github.raw+json`**: Returns the raw markdown. This is the default if you do not pass any specific media type.
+
+Parameters:
+- `gist_id` (path, string, required) - The unique identifier of the gist.
 
 Request body: application/json
 
 Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
+- 200: Response
+- 404: Resource not found
+- 422: Validation failed, or the endpoint has been spammed.
 
-##### GET /projects_random
+##### GET /gists/{gist_id}/comments
 
-Summary: Get a list of random projects
+Summary: List gist comments
 
-Parameters:
-- `count` (query, integer, required) - The number of random projects to return
+Lists the comments on a gist.
 
-Responses:
-- 200: Expected response to a valid request
-- 400: Request was invalid, see given error
+This endpoint supports the following custom media types. For more information, see "[Media types](https://docs.github.com/rest/using-the-rest-api/getting-started-with-the-rest-api#media-types)."
 
-##### POST /project
-
-Summary: Create a project
-
-Request body: multipart/form-data
-
-Responses:
-- 200: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-
-##### PATCH /project/{id|slug}/icon
-
-Summary: Change project's icon
-
-The new icon may be up to 256KiB in size.
+- **`application/vnd.github.raw+json`**: Returns the raw markdown. This is the default if you do not pass any specific media type.
 
 Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
-- `ext` (query, string, required) - Image extension
-
-Request body: image/png, image/jpeg, image/bmp, image/gif, image/webp, image/svg, image/svgz, image/rgb
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+- `per_page` (query, integer, optional) - The number of results per page (max 100). For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
+- `page` (query, integer, optional) - The page number of the results to fetch. For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
 
 Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
+- 200: Response
+- 304: Not modified
+- 403: Forbidden
+- 404: Resource not found
+
+##### POST /gists/{gist_id}/comments
+
+Summary: Create a gist comment
+
+Creates a comment on a gist.
+
+This endpoint supports the following custom media types. For more information, see "[Media types](https://docs.github.com/rest/using-the-rest-api/getting-started-with-the-rest-api#media-types)."
+
+- **`application/vnd.github.raw+json`**: Returns the raw markdown. This is the default if you do not pass any specific media type.
+
+Parameters:
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+
+Request body: application/json
+
+Responses:
+- 201: Response
+- 304: Not modified
+- 403: Forbidden
+- 404: Resource not found
+
+##### GET /gists/{gist_id}/comments/{comment_id}
+
+Summary: Get a gist comment
+
+Gets a comment on a gist.
+
+This endpoint supports the following custom media types. For more information, see "[Media types](https://docs.github.com/rest/using-the-rest-api/getting-started-with-the-rest-api#media-types)."
+
+- **`application/vnd.github.raw+json`**: Returns the raw markdown. This is the default if you do not pass any specific media type.
+
+Parameters:
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+- `comment_id` (path, integer, required) - The unique identifier of the comment.
+
+Responses:
+- 200: Response
+- 304: Not modified
+- 403: Forbidden Gist
+- 404: Resource not found
 
 #### Models
 
-- SearchResults
-- InvalidInputError
-- Project
-- EditableProject
-- AuthError
-- PatchProjectsBody
-- CreateProjectBody
-- ProjectResult
-- NonSearchProject
-- ServerRenderedProject
-- ModeratorMessage: A message that a moderator sent regarding the project
-- ProjectLicense: The license of the project
-- GalleryImage
-- ModifiableProject
-- ProjectDonationURL
-- CreatableProject
-- BaseProject
-- EditableVersion
-- CreatableProjectGalleryItem
-- BaseVersion
-- EditableFileType
-- VersionDependency
-- FileTypeEnum
+- base-gist: Base Gist
+- gist-simple: Gist Simple
+- gist-comment: A comment made to a gist.
+- nullable-simple-user: A GitHub user.
+- simple-user: A GitHub user.
+- basic-error: Basic Error
+- public-user: Public User
+- gist-history: Gist History
+- validation-error: Validation Error
+- author-association: How the author is associated with the repository.
 
-## Project discovery
+## Gist management
 
-### Labrinth
+### GitHub v3 REST API
 
-Path: `/project-discovery.html`
-Version: v2.7.0/366f528
+Path: `/gist-management.html`
+Version: 1.1.4
 
-This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-
-- [cURL](https://curl.se/) (recommended, command-line)
-- [ReqBIN](https://reqbin.com/) (recommended, online)
-- [Postman](https://www.postman.com/downloads/)
-- [Insomnia](https://insomnia.rest/)
-- Your web browser, if you don't need to send headers or a request body
-
-Once you have a working client, you can test that it works by making a `GET` request to `https://staging-api.modrinth.com/`:
-
-```json
-{
-  "about": "Welcome traveler!",
-  "documentation": "https://docs.modrinth.com",
-  "name": "modrinth-labrinth",
-  "version": "2.7.0"
-}
-```
-
-If you got a response similar to the one above, you can use the Modrinth API!
-When you want to go live using the production API, use `api.modrinth.com` instead of `staging-api.modrinth.com`.
-
-## Authentication
-This API has two options for authentication: personal access tokens and [OAuth2](https://en.wikipedia.org/wiki/OAuth).
-All tokens are tied to a Modrinth user and use the `Authorization` header of the request.
-
-Example:
-```
-Authorization: mrp_RNtLRSPmGj2pd1v1ubi52nX7TJJM9sznrmwhAuj511oe4t1jAqAQ3D6Wc8Ic
-```
-
-You do not need a token for most requests. Generally speaking, only the following types of requests require a token:
-- those which create data (such as version creation)
-- those which modify data (such as editing a project)
-- those which access private data (such as draft projects, notifications, emails, and payout data)
-
-Each request requiring authentication has a certain scope. For example, to view the email of the user being requested, the token must have the `USER_READ_EMAIL` scope.
-You can find the list of available scopes [on GitHub](https://github.com/modrinth/labrinth/blob/master/src/models/pats.rs#L15). Making a request with an invalid scope will return a 401 error.
-
-Please note that certain scopes and requests cannot be completed with a personal access token or using OAuth.
-For example, deleting a user account can only be done through Modrinth's frontend.
-
-A detailed guide on OAuth has been published in [Modrinth's technical documentation](https://docs.modrinth.com/guide/oauth).
-
-### Personal access tokens
-Personal access tokens (PATs) can be generated in from [the user settings](https://modrinth.com/settings/account).
-
-### GitHub tokens
-For backwards compatibility purposes, some types of GitHub tokens also work for authenticating a user with Modrinth's API, granting all scopes.
-**We urge any application still using GitHub tokens to start using personal access tokens for security and reliability purposes.**
-GitHub tokens will cease to function to authenticate with Modrinth's API as soon as version 3 of the API is made generally available.
-
-## Cross-Origin Resource Sharing
-This API features Cross-Origin Resource Sharing (CORS) implemented in compliance with the [W3C spec](https://www.w3.org/TR/cors/).
-This allows for cross-domain communication from the browser.
-All responses have a wildcard same-origin which makes them completely public and accessible to everyone, including any code on any site.
-
-## Identifiers
-The majority of items you can interact with in the API have a unique eight-digit base62 ID.
-Projects, versions, users, threads, teams, and reports all use this same way of identifying themselves.
-Version files use the sha1 or sha512 file hashes as identifiers.
-
-Each project and user has a friendlier way of identifying them; slugs and usernames, respectively.
-While unique IDs are constant, slugs and usernames can change at any moment.
-If you want to store something in the long term, it is recommended to use the unique ID.
-
-## Ratelimits
-The API has a ratelimit defined per IP. Limits and remaining amounts are given in the response headers.
-- `X-Ratelimit-Limit`: the maximum number of requests that can be made in a minute
-- `X-Ratelimit-Remaining`: the number of requests remaining in the current ratelimit window
-- `X-Ratelimit-Reset`: the time in seconds until the ratelimit window resets
-
-Ratelimits are the same no matter whether you use a token or not.
-The ratelimit is currently 300 requests per minute. If you have a use case requiring a higher limit, please [contact us](mailto:support@modrinth.com).
-
-## User Agents
-To access the Modrinth API, you **must** use provide a uniquely-identifying `User-Agent` header.
-Providing a user agent that only identifies your HTTP client library (such as "okhttp/4.9.3") increases the likelihood that we will block your traffic.
-It is recommended, but not required, to include contact information in your user agent.
-This allows us to contact you if we would like a change in your application's behavior without having to block your traffic.
-- Bad: `User-Agent: okhttp/4.9.3`
-- Good: `User-Agent: project_name`
-- Better: `User-Agent: github_username/project_name/1.56.0`
-- Best: `User-Agent: github_username/project_name/1.56.0 (launcher.com)` or `User-Agent: github_username/project_name/1.56.0 (contact@launcher.com)`
-
-## Versioning
-Modrinth follows a simple pattern for its API versioning.
-In the event of a breaking API change, the API version in the URL path is bumped, and migration steps will be published below.
-
-When an API is no longer the current one, it will immediately be considered deprecated.
-No more support will be provided for API versions older than the current one.
-It will be kept for some time, but this amount of time is not certain.
-
-We will exercise various tactics to get people to update their implementation of our API.
-One example is by adding something like `STOP USING THIS API` to various data returned by the API.
-
-Once an API version is completely deprecated, it will permanently return a 410 error.
-Please ensure your application handles these 410 errors.
-
-### Migrations
-Inside the following spoiler, you will be able to find all changes between versions of the Modrinth API, accompanied by tips and a guide to migrate applications to newer versions.
-
-Here, you can also find changes for [Minotaur](https://github.com/modrinth/minotaur), Modrinth's official Gradle plugin. Major versions of Minotaur directly correspond to major versions of the Modrinth API.
-
-<details><summary>API v1 to API v2</summary>
-
-These bullet points cover most changes in the v2 API, but please note that fields containing `mod` in most contexts have been shifted to `project`.  For example, in the search route, the field `mod_id` was renamed to `project_id`.
-
-- The search route has been moved from `/api/v1/mod` to `/v2/search`
-- New project fields: `project_type` (may be `mod` or `modpack`), `moderation_message` (which has a `message` and `body`), `gallery`
-- New search facet: `project_type`
-- Alphabetical sort removed (it didn't work and is not possible due to limits in MeiliSearch)
-- New search fields: `project_type`, `gallery`
-  - The gallery field is an array of URLs to images that are part of the project's gallery
-- The gallery is a new feature which allows the user to upload images showcasing their mod to the CDN which will be displayed on their mod page
-- Internal change: Any project file uploaded to Modrinth is now validated to make sure it's a valid Minecraft mod, Modpack, etc.
-  - For example, a Forge 1.17 mod with a JAR not containing a mods.toml will not be allowed to be uploaded to Modrinth
-- In project creation, projects may not upload a mod with no versions to review, however they can be saved as a draft
-  - Similarly, for version creation, a version may not be uploaded without any files
-- Donation URLs have been enabled
-- New project status: `archived`. Projects with this status do not appear in search
-- Tags (such as categories, loaders) now have icons (SVGs) and specific project types attached
-- Dependencies have been wiped and replaced with a new system
-- Notifications now have a `type` field, such as `project_update`
-
-Along with this, project subroutes (such as `/v2/project/{id}/version`) now allow the slug to be used as the ID. This is also the case with user routes.
-
-</details><details><summary>Minotaur v1 to Minotaur v2</summary>
-
-Minotaur 2.x introduced a few breaking changes to how your buildscript is formatted.
-
-First, instead of registering your own `publishModrinth` task, Minotaur now automatically creates a `modrinth` task. As such, you can replace the `task publishModrinth(type: TaskModrinthUpload) {` line with just `modrinth {`.
-
-To declare supported Minecraft versions and mod loaders, the `gameVersions` and `loaders` arrays must now be used. The syntax for these are pretty self-explanatory.
-
-Instead of using `releaseType`, you must now use `versionType`. This was actually changed in v1.2.0, but very few buildscripts have moved on from v1.1.0.
-
-Dependencies have been changed to a special DSL. Create a `dependencies` block within the `modrinth` block, and then use `scope.type("project/version")`. For example, `required.project("fabric-api")` adds a required project dependency on Fabric API.
-
-You may now use the slug anywhere that a project ID was previously required.
-
-</details>
-
+GitHub's v3 REST API.
 
 #### Operations
 
-##### DELETE /project/{id|slug}/icon
+##### DELETE /gists/{gist_id}/comments/{comment_id}
 
-Summary: Delete project's icon
+Summary: Delete a gist comment
 
 Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+- `comment_id` (path, integer, required) - The unique identifier of the comment.
 
 Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
+- 204: Response
+- 304: Not modified
+- 403: Forbidden
+- 404: Resource not found
 
-##### GET /project/{id|slug}/check
+##### PATCH /gists/{gist_id}/comments/{comment_id}
 
-Summary: Check project slug/ID validity
+Summary: Update a gist comment
 
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
+Updates a comment on a gist.
 
-Responses:
-- 200: Expected response to a valid request
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
+This endpoint supports the following custom media types. For more information, see "[Media types](https://docs.github.com/rest/using-the-rest-api/getting-started-with-the-rest-api#media-types)."
 
-##### POST /project/{id|slug}/gallery
-
-Summary: Add a gallery image
-
-Modrinth allows you to upload files of up to 5MiB to a project's gallery.
+- **`application/vnd.github.raw+json`**: Returns the raw markdown. This is the default if you do not pass any specific media type.
 
 Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
-- `ext` (query, string, required) - Image extension
-- `featured` (query, boolean, required) - Whether an image is featured
-- `title` (query, string, optional) - Title of the image
-- `description` (query, string, optional) - Description of the image
-- `ordering` (query, integer, optional) - Ordering of the image
-
-Request body: image/png, image/jpeg, image/bmp, image/gif, image/webp, image/svg, image/svgz, image/rgb
-
-Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### DELETE /project/{id|slug}/gallery
-
-Summary: Delete a gallery image
-
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
-- `url` (query, string, required) - URL link of the image to delete
-
-Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-
-##### PATCH /project/{id|slug}/gallery
-
-Summary: Modify a gallery image
-
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
-- `url` (query, string, required) - URL link of the image to modify
-- `featured` (query, boolean, optional) - Whether the image is featured
-- `title` (query, string, optional) - New title of the image
-- `description` (query, string, optional) - New description of the image
-- `ordering` (query, integer, optional) - New ordering of the image
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /project/{id|slug}/dependencies
-
-Summary: Get all of a project's dependencies
-
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
-
-Responses:
-- 200: Expected response to a valid request
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### POST /project/{id|slug}/follow
-
-Summary: Follow a project
-
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
-
-Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-
-##### DELETE /project/{id|slug}/follow
-
-Summary: Unfollow a project
-
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
-
-Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-
-##### POST /project/{id|slug}/schedule
-
-Summary: Schedule a project
-
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+- `comment_id` (path, integer, required) - The unique identifier of the comment.
 
 Request body: application/json
 
 Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
+- 200: Response
+- 404: Resource not found
+
+##### GET /gists/{gist_id}/commits
+
+Summary: List gist commits
+
+Parameters:
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+- `per_page` (query, integer, optional) - The number of results per page (max 100). For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
+- `page` (query, integer, optional) - The page number of the results to fetch. For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
+
+Responses:
+- 200: Response
+- 304: Not modified
+- 403: Forbidden
+- 404: Resource not found
+
+##### GET /gists/{gist_id}/forks
+
+Summary: List gist forks
+
+Parameters:
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+- `per_page` (query, integer, optional) - The number of results per page (max 100). For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
+- `page` (query, integer, optional) - The page number of the results to fetch. For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
+
+Responses:
+- 200: Response
+- 304: Not modified
+- 403: Forbidden
+- 404: Resource not found
+
+##### POST /gists/{gist_id}/forks
+
+Summary: Fork a gist
+
+Parameters:
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+
+Responses:
+- 201: Response
+- 304: Not modified
+- 403: Forbidden
+- 404: Resource not found
+- 422: Validation failed, or the endpoint has been spammed.
+
+##### GET /gists/{gist_id}/star
+
+Summary: Check if a gist is starred
+
+Parameters:
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+
+Responses:
+- 204: Response if gist is starred
+- 304: Not modified
+- 403: Forbidden
+- 404: Not Found if gist is not starred
+
+##### PUT /gists/{gist_id}/star
+
+Summary: Star a gist
+
+Note that you'll need to set `Content-Length` to zero when calling out to this endpoint. For more information, see "[HTTP method](https://docs.github.com/rest/guides/getting-started-with-the-rest-api#http-method)."
+
+Parameters:
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+
+Responses:
+- 204: Response
+- 304: Not modified
+- 403: Forbidden
+- 404: Resource not found
+
+##### DELETE /gists/{gist_id}/star
+
+Summary: Unstar a gist
+
+Parameters:
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+
+Responses:
+- 204: Response
+- 304: Not modified
+- 403: Forbidden
+- 404: Resource not found
+
+##### GET /gists/{gist_id}/{sha}
+
+Summary: Get a gist revision
+
+Gets a specified gist revision.
+
+This endpoint supports the following custom media types. For more information, see "[Media types](https://docs.github.com/rest/using-the-rest-api/getting-started-with-the-rest-api#media-types)."
+
+- **`application/vnd.github.raw+json`**: Returns the raw markdown. This is the default if you do not pass any specific media type.
+
+Parameters:
+- `gist_id` (path, string, required) - The unique identifier of the gist.
+- `sha` (path, string, required)
+
+Responses:
+- 200: Response
+- 403: Forbidden
+- 404: Resource not found
+- 422: Validation failed, or the endpoint has been spammed.
+
+##### GET /users/{username}/gists
+
+Summary: List gists for a user
+
+Lists public gists for the specified user:
+
+Parameters:
+- `username` (path, string, required) - The handle for the GitHub user account.
+- `since` (query, string, optional) - Only show results that were last updated after the given time. This is a timestamp in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format: `YYYY-MM-DDTHH:MM:SSZ`.
+- `per_page` (query, integer, optional) - The number of results per page (max 100). For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
+- `page` (query, integer, optional) - The page number of the results to fetch. For more information, see "[Using pagination in the REST API](https://docs.github.com/rest/using-the-rest-api/using-pagination-in-the-rest-api)."
+
+Responses:
+- 200: Response
+- 422: Validation failed, or the endpoint has been spammed.
 
 #### Models
 
-- InvalidInputError
-- AuthError
-- ProjectIdentifier
-- ProjectDependencyList
-- Schedule
-- Project
-- Version
-- NonSearchProject
-- ServerRenderedProject
-- ModeratorMessage: A message that a moderator sent regarding the project
-- ProjectLicense: The license of the project
-- GalleryImage
-- BaseVersion
-- VersionFile
-- BaseProject
-- ProjectDonationURL
-- VersionDependency
-- VersionFileHashes: A map of hashes of the file. The key is the hashing algorithm and the value is the string version of the hash.
-- FileTypeEnum
-
-## Versions
-
-### Labrinth
-
-Path: `/versions.html`
-Version: v2.7.0/366f528
-
-This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-
-- [cURL](https://curl.se/) (recommended, command-line)
-- [ReqBIN](https://reqbin.com/) (recommended, online)
-- [Postman](https://www.postman.com/downloads/)
-- [Insomnia](https://insomnia.rest/)
-- Your web browser, if you don't need to send headers or a request body
-
-Once you have a working client, you can test that it works by making a `GET` request to `https://staging-api.modrinth.com/`:
-
-```json
-{
-  "about": "Welcome traveler!",
-  "documentation": "https://docs.modrinth.com",
-  "name": "modrinth-labrinth",
-  "version": "2.7.0"
-}
-```
-
-If you got a response similar to the one above, you can use the Modrinth API!
-When you want to go live using the production API, use `api.modrinth.com` instead of `staging-api.modrinth.com`.
-
-## Authentication
-This API has two options for authentication: personal access tokens and [OAuth2](https://en.wikipedia.org/wiki/OAuth).
-All tokens are tied to a Modrinth user and use the `Authorization` header of the request.
-
-Example:
-```
-Authorization: mrp_RNtLRSPmGj2pd1v1ubi52nX7TJJM9sznrmwhAuj511oe4t1jAqAQ3D6Wc8Ic
-```
-
-You do not need a token for most requests. Generally speaking, only the following types of requests require a token:
-- those which create data (such as version creation)
-- those which modify data (such as editing a project)
-- those which access private data (such as draft projects, notifications, emails, and payout data)
-
-Each request requiring authentication has a certain scope. For example, to view the email of the user being requested, the token must have the `USER_READ_EMAIL` scope.
-You can find the list of available scopes [on GitHub](https://github.com/modrinth/labrinth/blob/master/src/models/pats.rs#L15). Making a request with an invalid scope will return a 401 error.
-
-Please note that certain scopes and requests cannot be completed with a personal access token or using OAuth.
-For example, deleting a user account can only be done through Modrinth's frontend.
-
-A detailed guide on OAuth has been published in [Modrinth's technical documentation](https://docs.modrinth.com/guide/oauth).
-
-### Personal access tokens
-Personal access tokens (PATs) can be generated in from [the user settings](https://modrinth.com/settings/account).
-
-### GitHub tokens
-For backwards compatibility purposes, some types of GitHub tokens also work for authenticating a user with Modrinth's API, granting all scopes.
-**We urge any application still using GitHub tokens to start using personal access tokens for security and reliability purposes.**
-GitHub tokens will cease to function to authenticate with Modrinth's API as soon as version 3 of the API is made generally available.
-
-## Cross-Origin Resource Sharing
-This API features Cross-Origin Resource Sharing (CORS) implemented in compliance with the [W3C spec](https://www.w3.org/TR/cors/).
-This allows for cross-domain communication from the browser.
-All responses have a wildcard same-origin which makes them completely public and accessible to everyone, including any code on any site.
-
-## Identifiers
-The majority of items you can interact with in the API have a unique eight-digit base62 ID.
-Projects, versions, users, threads, teams, and reports all use this same way of identifying themselves.
-Version files use the sha1 or sha512 file hashes as identifiers.
-
-Each project and user has a friendlier way of identifying them; slugs and usernames, respectively.
-While unique IDs are constant, slugs and usernames can change at any moment.
-If you want to store something in the long term, it is recommended to use the unique ID.
-
-## Ratelimits
-The API has a ratelimit defined per IP. Limits and remaining amounts are given in the response headers.
-- `X-Ratelimit-Limit`: the maximum number of requests that can be made in a minute
-- `X-Ratelimit-Remaining`: the number of requests remaining in the current ratelimit window
-- `X-Ratelimit-Reset`: the time in seconds until the ratelimit window resets
-
-Ratelimits are the same no matter whether you use a token or not.
-The ratelimit is currently 300 requests per minute. If you have a use case requiring a higher limit, please [contact us](mailto:support@modrinth.com).
-
-## User Agents
-To access the Modrinth API, you **must** use provide a uniquely-identifying `User-Agent` header.
-Providing a user agent that only identifies your HTTP client library (such as "okhttp/4.9.3") increases the likelihood that we will block your traffic.
-It is recommended, but not required, to include contact information in your user agent.
-This allows us to contact you if we would like a change in your application's behavior without having to block your traffic.
-- Bad: `User-Agent: okhttp/4.9.3`
-- Good: `User-Agent: project_name`
-- Better: `User-Agent: github_username/project_name/1.56.0`
-- Best: `User-Agent: github_username/project_name/1.56.0 (launcher.com)` or `User-Agent: github_username/project_name/1.56.0 (contact@launcher.com)`
-
-## Versioning
-Modrinth follows a simple pattern for its API versioning.
-In the event of a breaking API change, the API version in the URL path is bumped, and migration steps will be published below.
-
-When an API is no longer the current one, it will immediately be considered deprecated.
-No more support will be provided for API versions older than the current one.
-It will be kept for some time, but this amount of time is not certain.
-
-We will exercise various tactics to get people to update their implementation of our API.
-One example is by adding something like `STOP USING THIS API` to various data returned by the API.
-
-Once an API version is completely deprecated, it will permanently return a 410 error.
-Please ensure your application handles these 410 errors.
-
-### Migrations
-Inside the following spoiler, you will be able to find all changes between versions of the Modrinth API, accompanied by tips and a guide to migrate applications to newer versions.
-
-Here, you can also find changes for [Minotaur](https://github.com/modrinth/minotaur), Modrinth's official Gradle plugin. Major versions of Minotaur directly correspond to major versions of the Modrinth API.
-
-<details><summary>API v1 to API v2</summary>
-
-These bullet points cover most changes in the v2 API, but please note that fields containing `mod` in most contexts have been shifted to `project`.  For example, in the search route, the field `mod_id` was renamed to `project_id`.
-
-- The search route has been moved from `/api/v1/mod` to `/v2/search`
-- New project fields: `project_type` (may be `mod` or `modpack`), `moderation_message` (which has a `message` and `body`), `gallery`
-- New search facet: `project_type`
-- Alphabetical sort removed (it didn't work and is not possible due to limits in MeiliSearch)
-- New search fields: `project_type`, `gallery`
-  - The gallery field is an array of URLs to images that are part of the project's gallery
-- The gallery is a new feature which allows the user to upload images showcasing their mod to the CDN which will be displayed on their mod page
-- Internal change: Any project file uploaded to Modrinth is now validated to make sure it's a valid Minecraft mod, Modpack, etc.
-  - For example, a Forge 1.17 mod with a JAR not containing a mods.toml will not be allowed to be uploaded to Modrinth
-- In project creation, projects may not upload a mod with no versions to review, however they can be saved as a draft
-  - Similarly, for version creation, a version may not be uploaded without any files
-- Donation URLs have been enabled
-- New project status: `archived`. Projects with this status do not appear in search
-- Tags (such as categories, loaders) now have icons (SVGs) and specific project types attached
-- Dependencies have been wiped and replaced with a new system
-- Notifications now have a `type` field, such as `project_update`
-
-Along with this, project subroutes (such as `/v2/project/{id}/version`) now allow the slug to be used as the ID. This is also the case with user routes.
-
-</details><details><summary>Minotaur v1 to Minotaur v2</summary>
-
-Minotaur 2.x introduced a few breaking changes to how your buildscript is formatted.
-
-First, instead of registering your own `publishModrinth` task, Minotaur now automatically creates a `modrinth` task. As such, you can replace the `task publishModrinth(type: TaskModrinthUpload) {` line with just `modrinth {`.
-
-To declare supported Minecraft versions and mod loaders, the `gameVersions` and `loaders` arrays must now be used. The syntax for these are pretty self-explanatory.
-
-Instead of using `releaseType`, you must now use `versionType`. This was actually changed in v1.2.0, but very few buildscripts have moved on from v1.1.0.
-
-Dependencies have been changed to a special DSL. Create a `dependencies` block within the `modrinth` block, and then use `scope.type("project/version")`. For example, `required.project("fabric-api")` adds a required project dependency on Fabric API.
-
-You may now use the slug anywhere that a project ID was previously required.
-
-</details>
-
-
-#### Operations
-
-##### GET /project/{id|slug}/version
-
-Summary: List project's versions
-
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
-- `loaders` (query, string, optional) - The types of loaders to filter for
-- `game_versions` (query, string, optional) - The game versions to filter for
-- `featured` (query, boolean, optional) - Allows to filter for featured or non-featured versions only
-- `include_changelog` (query, boolean, optional) - Allows you to toggle the inclusion of the changelog field in the response. It is highly recommended to use include_changelog=false in most cases unless you specifically need the changelog for all versions.
-
-Responses:
-- 200: Expected response to a valid request
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /version/{id}
-
-Summary: Get a version
-
-Parameters:
-- `id` (path, string, required) - The ID of the version
-
-Responses:
-- 200: Expected response to a valid request
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### DELETE /version/{id}
-
-Summary: Delete a version
-
-Parameters:
-- `id` (path, string, required) - The ID of the version
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### PATCH /version/{id}
-
-Summary: Modify a version
-
-Parameters:
-- `id` (path, string, required) - The ID of the version
-
-Request body: application/json
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /project/{id|slug}/version/{id|number}
-
-Summary: Get a version given a version number or ID
-
-Please note that, if the version number provided matches multiple versions, only the **oldest matching version** will be returned.
-
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
-- `id|number` (path, string, required) - The version ID or version number
-
-Responses:
-- 200: Expected response to a valid request
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### POST /version
-
-Summary: Create a version
-
-This route creates a version on an existing project. There must be at least one file attached to each new version, unless the new version's status is `draft`. `.mrpack`, `.jar`, `.zip`, and `.litemod` files are accepted.
-
-The request is a [multipart request](https://www.ietf.org/rfc/rfc2388.txt) with at least two form fields: one is `data`, which includes a JSON body with the version metadata as shown below, and at least one field containing an upload file.
-
-You can name the file parts anything you would like, but you must list each of the parts' names in `file_parts`, and optionally, provide one to use as the primary file in `primary_file`.
-
-
-Request body: multipart/form-data
-
-Responses:
-- 200: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-
-##### POST /version/{id}/schedule
-
-Summary: Schedule a version
-
-Parameters:
-- `id` (path, string, required) - The ID of the version
-
-Request body: application/json
-
-Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-
-##### GET /versions
-
-Summary: Get multiple versions
-
-Parameters:
-- `ids` (query, string, required) - The IDs of the versions
-
-Responses:
-- 200: Expected response to a valid request
-
-##### POST /version/{id}/file
-
-Summary: Add files to version
-
-Project files are attached. `.mrpack` and `.jar` files are accepted.
-
-Parameters:
-- `id` (path, string, required) - The ID of the version
-
-Request body: multipart/form-data
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-#### Models
-
-- Version
-- EditableVersion
-- AuthError
-- CreateVersionBody
-- InvalidInputError
-- Schedule
-- BaseVersion
-- VersionFile
-- EditableFileType
-- CreatableVersion
-- VersionDependency
-- VersionFileHashes: A map of hashes of the file. The key is the hashing algorithm and the value is the string version of the hash.
-- FileTypeEnum
-
-## Version files
-
-### Labrinth
-
-Path: `/version-files.html`
-Version: v2.7.0/366f528
-
-This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-
-- [cURL](https://curl.se/) (recommended, command-line)
-- [ReqBIN](https://reqbin.com/) (recommended, online)
-- [Postman](https://www.postman.com/downloads/)
-- [Insomnia](https://insomnia.rest/)
-- Your web browser, if you don't need to send headers or a request body
-
-Once you have a working client, you can test that it works by making a `GET` request to `https://staging-api.modrinth.com/`:
-
-```json
-{
-  "about": "Welcome traveler!",
-  "documentation": "https://docs.modrinth.com",
-  "name": "modrinth-labrinth",
-  "version": "2.7.0"
-}
-```
-
-If you got a response similar to the one above, you can use the Modrinth API!
-When you want to go live using the production API, use `api.modrinth.com` instead of `staging-api.modrinth.com`.
-
-## Authentication
-This API has two options for authentication: personal access tokens and [OAuth2](https://en.wikipedia.org/wiki/OAuth).
-All tokens are tied to a Modrinth user and use the `Authorization` header of the request.
-
-Example:
-```
-Authorization: mrp_RNtLRSPmGj2pd1v1ubi52nX7TJJM9sznrmwhAuj511oe4t1jAqAQ3D6Wc8Ic
-```
-
-You do not need a token for most requests. Generally speaking, only the following types of requests require a token:
-- those which create data (such as version creation)
-- those which modify data (such as editing a project)
-- those which access private data (such as draft projects, notifications, emails, and payout data)
-
-Each request requiring authentication has a certain scope. For example, to view the email of the user being requested, the token must have the `USER_READ_EMAIL` scope.
-You can find the list of available scopes [on GitHub](https://github.com/modrinth/labrinth/blob/master/src/models/pats.rs#L15). Making a request with an invalid scope will return a 401 error.
-
-Please note that certain scopes and requests cannot be completed with a personal access token or using OAuth.
-For example, deleting a user account can only be done through Modrinth's frontend.
-
-A detailed guide on OAuth has been published in [Modrinth's technical documentation](https://docs.modrinth.com/guide/oauth).
-
-### Personal access tokens
-Personal access tokens (PATs) can be generated in from [the user settings](https://modrinth.com/settings/account).
-
-### GitHub tokens
-For backwards compatibility purposes, some types of GitHub tokens also work for authenticating a user with Modrinth's API, granting all scopes.
-**We urge any application still using GitHub tokens to start using personal access tokens for security and reliability purposes.**
-GitHub tokens will cease to function to authenticate with Modrinth's API as soon as version 3 of the API is made generally available.
-
-## Cross-Origin Resource Sharing
-This API features Cross-Origin Resource Sharing (CORS) implemented in compliance with the [W3C spec](https://www.w3.org/TR/cors/).
-This allows for cross-domain communication from the browser.
-All responses have a wildcard same-origin which makes them completely public and accessible to everyone, including any code on any site.
-
-## Identifiers
-The majority of items you can interact with in the API have a unique eight-digit base62 ID.
-Projects, versions, users, threads, teams, and reports all use this same way of identifying themselves.
-Version files use the sha1 or sha512 file hashes as identifiers.
-
-Each project and user has a friendlier way of identifying them; slugs and usernames, respectively.
-While unique IDs are constant, slugs and usernames can change at any moment.
-If you want to store something in the long term, it is recommended to use the unique ID.
-
-## Ratelimits
-The API has a ratelimit defined per IP. Limits and remaining amounts are given in the response headers.
-- `X-Ratelimit-Limit`: the maximum number of requests that can be made in a minute
-- `X-Ratelimit-Remaining`: the number of requests remaining in the current ratelimit window
-- `X-Ratelimit-Reset`: the time in seconds until the ratelimit window resets
-
-Ratelimits are the same no matter whether you use a token or not.
-The ratelimit is currently 300 requests per minute. If you have a use case requiring a higher limit, please [contact us](mailto:support@modrinth.com).
-
-## User Agents
-To access the Modrinth API, you **must** use provide a uniquely-identifying `User-Agent` header.
-Providing a user agent that only identifies your HTTP client library (such as "okhttp/4.9.3") increases the likelihood that we will block your traffic.
-It is recommended, but not required, to include contact information in your user agent.
-This allows us to contact you if we would like a change in your application's behavior without having to block your traffic.
-- Bad: `User-Agent: okhttp/4.9.3`
-- Good: `User-Agent: project_name`
-- Better: `User-Agent: github_username/project_name/1.56.0`
-- Best: `User-Agent: github_username/project_name/1.56.0 (launcher.com)` or `User-Agent: github_username/project_name/1.56.0 (contact@launcher.com)`
-
-## Versioning
-Modrinth follows a simple pattern for its API versioning.
-In the event of a breaking API change, the API version in the URL path is bumped, and migration steps will be published below.
-
-When an API is no longer the current one, it will immediately be considered deprecated.
-No more support will be provided for API versions older than the current one.
-It will be kept for some time, but this amount of time is not certain.
-
-We will exercise various tactics to get people to update their implementation of our API.
-One example is by adding something like `STOP USING THIS API` to various data returned by the API.
-
-Once an API version is completely deprecated, it will permanently return a 410 error.
-Please ensure your application handles these 410 errors.
-
-### Migrations
-Inside the following spoiler, you will be able to find all changes between versions of the Modrinth API, accompanied by tips and a guide to migrate applications to newer versions.
-
-Here, you can also find changes for [Minotaur](https://github.com/modrinth/minotaur), Modrinth's official Gradle plugin. Major versions of Minotaur directly correspond to major versions of the Modrinth API.
-
-<details><summary>API v1 to API v2</summary>
-
-These bullet points cover most changes in the v2 API, but please note that fields containing `mod` in most contexts have been shifted to `project`.  For example, in the search route, the field `mod_id` was renamed to `project_id`.
-
-- The search route has been moved from `/api/v1/mod` to `/v2/search`
-- New project fields: `project_type` (may be `mod` or `modpack`), `moderation_message` (which has a `message` and `body`), `gallery`
-- New search facet: `project_type`
-- Alphabetical sort removed (it didn't work and is not possible due to limits in MeiliSearch)
-- New search fields: `project_type`, `gallery`
-  - The gallery field is an array of URLs to images that are part of the project's gallery
-- The gallery is a new feature which allows the user to upload images showcasing their mod to the CDN which will be displayed on their mod page
-- Internal change: Any project file uploaded to Modrinth is now validated to make sure it's a valid Minecraft mod, Modpack, etc.
-  - For example, a Forge 1.17 mod with a JAR not containing a mods.toml will not be allowed to be uploaded to Modrinth
-- In project creation, projects may not upload a mod with no versions to review, however they can be saved as a draft
-  - Similarly, for version creation, a version may not be uploaded without any files
-- Donation URLs have been enabled
-- New project status: `archived`. Projects with this status do not appear in search
-- Tags (such as categories, loaders) now have icons (SVGs) and specific project types attached
-- Dependencies have been wiped and replaced with a new system
-- Notifications now have a `type` field, such as `project_update`
-
-Along with this, project subroutes (such as `/v2/project/{id}/version`) now allow the slug to be used as the ID. This is also the case with user routes.
-
-</details><details><summary>Minotaur v1 to Minotaur v2</summary>
-
-Minotaur 2.x introduced a few breaking changes to how your buildscript is formatted.
-
-First, instead of registering your own `publishModrinth` task, Minotaur now automatically creates a `modrinth` task. As such, you can replace the `task publishModrinth(type: TaskModrinthUpload) {` line with just `modrinth {`.
-
-To declare supported Minecraft versions and mod loaders, the `gameVersions` and `loaders` arrays must now be used. The syntax for these are pretty self-explanatory.
-
-Instead of using `releaseType`, you must now use `versionType`. This was actually changed in v1.2.0, but very few buildscripts have moved on from v1.1.0.
-
-Dependencies have been changed to a special DSL. Create a `dependencies` block within the `modrinth` block, and then use `scope.type("project/version")`. For example, `required.project("fabric-api")` adds a required project dependency on Fabric API.
-
-You may now use the slug anywhere that a project ID was previously required.
-
-</details>
-
-
-#### Operations
-
-##### GET /version_file/{hash}
-
-Summary: Get version from hash
-
-Parameters:
-- `hash` (path, string, required) - The hash of the file, considering its byte content, and encoded in hexadecimal
-- `algorithm` (query, string, required) - The algorithm of the hash
-- `multiple` (query, boolean, optional) - Whether to return multiple results when looking for this hash
-
-Responses:
-- 200: Expected response to a valid request
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### DELETE /version_file/{hash}
-
-Summary: Delete a file from its hash
-
-Parameters:
-- `hash` (path, string, required) - The hash of the file, considering its byte content, and encoded in hexadecimal
-- `algorithm` (query, string, required) - The algorithm of the hash
-- `version_id` (query, string, optional) - Version ID to delete the version from, if multiple files of the same hash exist
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### POST /version_file/{hash}/update
-
-Summary: Latest version of a project from a hash, loader(s), and game version(s)
-
-Parameters:
-- `hash` (path, string, required) - The hash of the file, considering its byte content, and encoded in hexadecimal
-- `algorithm` (query, string, required) - The algorithm of the hash
-
-Request body: application/json
-
-Responses:
-- 200: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### POST /version_files
-
-Summary: Get versions from hashes
-
-This is the same as [`/version_file/{hash}`](#operation/versionFromHash) except it accepts multiple hashes.
-
-Request body: application/json
-
-Responses:
-- 200: Expected response to a valid request
-- 400: Request was invalid, see given error
-
-##### POST /version_files/update
-
-Summary: Latest versions of multiple project from hashes, loader(s), and game version(s)
-
-This is the same as [`/version_file/{hash}/update`](#operation/getLatestVersionFromHash) except it accepts multiple hashes.
-
-Request body: application/json
-
-Responses:
-- 200: Expected response to a valid request
-- 400: Request was invalid, see given error
-
-#### Models
-
-- Version
-- AuthError
-- GetLatestVersionFromHashBody
-- HashVersionMap: A map from hashes to versions
-- HashList: A list of hashes and the algorithm used to create them
-- GetLatestVersionsFromHashesBody
-- BaseVersion
-- VersionFile
-- VersionDependency
-- VersionFileHashes: A map of hashes of the file. The key is the hashing algorithm and the value is the string version of the hash.
-- FileTypeEnum
-
-## Users
-
-### Labrinth
-
-Path: `/users.html`
-Version: v2.7.0/366f528
-
-This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-
-- [cURL](https://curl.se/) (recommended, command-line)
-- [ReqBIN](https://reqbin.com/) (recommended, online)
-- [Postman](https://www.postman.com/downloads/)
-- [Insomnia](https://insomnia.rest/)
-- Your web browser, if you don't need to send headers or a request body
-
-Once you have a working client, you can test that it works by making a `GET` request to `https://staging-api.modrinth.com/`:
-
-```json
-{
-  "about": "Welcome traveler!",
-  "documentation": "https://docs.modrinth.com",
-  "name": "modrinth-labrinth",
-  "version": "2.7.0"
-}
-```
-
-If you got a response similar to the one above, you can use the Modrinth API!
-When you want to go live using the production API, use `api.modrinth.com` instead of `staging-api.modrinth.com`.
-
-## Authentication
-This API has two options for authentication: personal access tokens and [OAuth2](https://en.wikipedia.org/wiki/OAuth).
-All tokens are tied to a Modrinth user and use the `Authorization` header of the request.
-
-Example:
-```
-Authorization: mrp_RNtLRSPmGj2pd1v1ubi52nX7TJJM9sznrmwhAuj511oe4t1jAqAQ3D6Wc8Ic
-```
-
-You do not need a token for most requests. Generally speaking, only the following types of requests require a token:
-- those which create data (such as version creation)
-- those which modify data (such as editing a project)
-- those which access private data (such as draft projects, notifications, emails, and payout data)
-
-Each request requiring authentication has a certain scope. For example, to view the email of the user being requested, the token must have the `USER_READ_EMAIL` scope.
-You can find the list of available scopes [on GitHub](https://github.com/modrinth/labrinth/blob/master/src/models/pats.rs#L15). Making a request with an invalid scope will return a 401 error.
-
-Please note that certain scopes and requests cannot be completed with a personal access token or using OAuth.
-For example, deleting a user account can only be done through Modrinth's frontend.
-
-A detailed guide on OAuth has been published in [Modrinth's technical documentation](https://docs.modrinth.com/guide/oauth).
-
-### Personal access tokens
-Personal access tokens (PATs) can be generated in from [the user settings](https://modrinth.com/settings/account).
-
-### GitHub tokens
-For backwards compatibility purposes, some types of GitHub tokens also work for authenticating a user with Modrinth's API, granting all scopes.
-**We urge any application still using GitHub tokens to start using personal access tokens for security and reliability purposes.**
-GitHub tokens will cease to function to authenticate with Modrinth's API as soon as version 3 of the API is made generally available.
-
-## Cross-Origin Resource Sharing
-This API features Cross-Origin Resource Sharing (CORS) implemented in compliance with the [W3C spec](https://www.w3.org/TR/cors/).
-This allows for cross-domain communication from the browser.
-All responses have a wildcard same-origin which makes them completely public and accessible to everyone, including any code on any site.
-
-## Identifiers
-The majority of items you can interact with in the API have a unique eight-digit base62 ID.
-Projects, versions, users, threads, teams, and reports all use this same way of identifying themselves.
-Version files use the sha1 or sha512 file hashes as identifiers.
-
-Each project and user has a friendlier way of identifying them; slugs and usernames, respectively.
-While unique IDs are constant, slugs and usernames can change at any moment.
-If you want to store something in the long term, it is recommended to use the unique ID.
-
-## Ratelimits
-The API has a ratelimit defined per IP. Limits and remaining amounts are given in the response headers.
-- `X-Ratelimit-Limit`: the maximum number of requests that can be made in a minute
-- `X-Ratelimit-Remaining`: the number of requests remaining in the current ratelimit window
-- `X-Ratelimit-Reset`: the time in seconds until the ratelimit window resets
-
-Ratelimits are the same no matter whether you use a token or not.
-The ratelimit is currently 300 requests per minute. If you have a use case requiring a higher limit, please [contact us](mailto:support@modrinth.com).
-
-## User Agents
-To access the Modrinth API, you **must** use provide a uniquely-identifying `User-Agent` header.
-Providing a user agent that only identifies your HTTP client library (such as "okhttp/4.9.3") increases the likelihood that we will block your traffic.
-It is recommended, but not required, to include contact information in your user agent.
-This allows us to contact you if we would like a change in your application's behavior without having to block your traffic.
-- Bad: `User-Agent: okhttp/4.9.3`
-- Good: `User-Agent: project_name`
-- Better: `User-Agent: github_username/project_name/1.56.0`
-- Best: `User-Agent: github_username/project_name/1.56.0 (launcher.com)` or `User-Agent: github_username/project_name/1.56.0 (contact@launcher.com)`
-
-## Versioning
-Modrinth follows a simple pattern for its API versioning.
-In the event of a breaking API change, the API version in the URL path is bumped, and migration steps will be published below.
-
-When an API is no longer the current one, it will immediately be considered deprecated.
-No more support will be provided for API versions older than the current one.
-It will be kept for some time, but this amount of time is not certain.
-
-We will exercise various tactics to get people to update their implementation of our API.
-One example is by adding something like `STOP USING THIS API` to various data returned by the API.
-
-Once an API version is completely deprecated, it will permanently return a 410 error.
-Please ensure your application handles these 410 errors.
-
-### Migrations
-Inside the following spoiler, you will be able to find all changes between versions of the Modrinth API, accompanied by tips and a guide to migrate applications to newer versions.
-
-Here, you can also find changes for [Minotaur](https://github.com/modrinth/minotaur), Modrinth's official Gradle plugin. Major versions of Minotaur directly correspond to major versions of the Modrinth API.
-
-<details><summary>API v1 to API v2</summary>
-
-These bullet points cover most changes in the v2 API, but please note that fields containing `mod` in most contexts have been shifted to `project`.  For example, in the search route, the field `mod_id` was renamed to `project_id`.
-
-- The search route has been moved from `/api/v1/mod` to `/v2/search`
-- New project fields: `project_type` (may be `mod` or `modpack`), `moderation_message` (which has a `message` and `body`), `gallery`
-- New search facet: `project_type`
-- Alphabetical sort removed (it didn't work and is not possible due to limits in MeiliSearch)
-- New search fields: `project_type`, `gallery`
-  - The gallery field is an array of URLs to images that are part of the project's gallery
-- The gallery is a new feature which allows the user to upload images showcasing their mod to the CDN which will be displayed on their mod page
-- Internal change: Any project file uploaded to Modrinth is now validated to make sure it's a valid Minecraft mod, Modpack, etc.
-  - For example, a Forge 1.17 mod with a JAR not containing a mods.toml will not be allowed to be uploaded to Modrinth
-- In project creation, projects may not upload a mod with no versions to review, however they can be saved as a draft
-  - Similarly, for version creation, a version may not be uploaded without any files
-- Donation URLs have been enabled
-- New project status: `archived`. Projects with this status do not appear in search
-- Tags (such as categories, loaders) now have icons (SVGs) and specific project types attached
-- Dependencies have been wiped and replaced with a new system
-- Notifications now have a `type` field, such as `project_update`
-
-Along with this, project subroutes (such as `/v2/project/{id}/version`) now allow the slug to be used as the ID. This is also the case with user routes.
-
-</details><details><summary>Minotaur v1 to Minotaur v2</summary>
-
-Minotaur 2.x introduced a few breaking changes to how your buildscript is formatted.
-
-First, instead of registering your own `publishModrinth` task, Minotaur now automatically creates a `modrinth` task. As such, you can replace the `task publishModrinth(type: TaskModrinthUpload) {` line with just `modrinth {`.
-
-To declare supported Minecraft versions and mod loaders, the `gameVersions` and `loaders` arrays must now be used. The syntax for these are pretty self-explanatory.
-
-Instead of using `releaseType`, you must now use `versionType`. This was actually changed in v1.2.0, but very few buildscripts have moved on from v1.1.0.
-
-Dependencies have been changed to a special DSL. Create a `dependencies` block within the `modrinth` block, and then use `scope.type("project/version")`. For example, `required.project("fabric-api")` adds a required project dependency on Fabric API.
-
-You may now use the slug anywhere that a project ID was previously required.
-
-</details>
-
-
-#### Operations
-
-##### GET /user/{id|username}
-
-Summary: Get a user
-
-Parameters:
-- `id|username` (path, string, required) - The ID or username of the user
-
-Responses:
-- 200: Expected response to a valid request
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### PATCH /user/{id|username}
-
-Summary: Modify a user
-
-Parameters:
-- `id|username` (path, string, required) - The ID or username of the user
-
-Request body: application/json
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /user
-
-Summary: Get user from authorization header
-
-Responses:
-- 200: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-
-##### GET /users
-
-Summary: Get multiple users
-
-Parameters:
-- `ids` (query, string, required) - The IDs of the users
-
-Responses:
-- 200: Expected response to a valid request
-
-##### DELETE /user/{id|username}/icon
-
-Summary: Remove user's avatar
-
-Parameters:
-- `id|username` (path, string, required) - The ID or username of the user
-
-Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### PATCH /user/{id|username}/icon
-
-Summary: Change user's avatar
-
-The new avatar may be up to 2MiB in size.
-
-Parameters:
-- `id|username` (path, string, required) - The ID or username of the user
-
-Request body: image/png, image/jpeg, image/bmp, image/gif, image/webp, image/svg, image/svgz, image/rgb
-
-Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /user/{id|username}/projects
-
-Summary: Get user's projects
-
-Parameters:
-- `id|username` (path, string, required) - The ID or username of the user
-
-Responses:
-- 200: Expected response to a valid request
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /user/{id|username}/follows
-
-Summary: Get user's followed projects
-
-Parameters:
-- `id|username` (path, string, required) - The ID or username of the user
-
-Responses:
-- 200: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /user/{id|username}/payouts
-
-Summary: Get user's payout history
-
-Parameters:
-- `id|username` (path, string, required) - The ID or username of the user
-
-Responses:
-- 200: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### POST /user/{id|username}/payouts
-
-Summary: Withdraw payout balance to PayPal or Venmo
-
-Warning: certain amounts get withheld for fees. Please do not call this API endpoint without first acknowledging the warnings on the corresponding frontend page.
-
-Parameters:
-- `id|username` (path, string, required) - The ID or username of the user
-- `amount` (query, integer, required) - Amount to withdraw
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-#### Models
-
-- User
-- EditableUser
-- AuthError
-- InvalidInputError
-- Project
-- UserPayoutHistory
-- UserPayoutData: Various data relating to the user's payouts status (you can only see your own)
-- NonSearchProject
-- ServerRenderedProject
-- ModeratorMessage: A message that a moderator sent regarding the project
-- ProjectLicense: The license of the project
-- GalleryImage
-- UserPayoutHistoryEntry
-- BaseProject
-- ProjectDonationURL
-
-## Notifications
-
-### Labrinth
-
-Path: `/notifications.html`
-Version: v2.7.0/366f528
-
-This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-
-- [cURL](https://curl.se/) (recommended, command-line)
-- [ReqBIN](https://reqbin.com/) (recommended, online)
-- [Postman](https://www.postman.com/downloads/)
-- [Insomnia](https://insomnia.rest/)
-- Your web browser, if you don't need to send headers or a request body
-
-Once you have a working client, you can test that it works by making a `GET` request to `https://staging-api.modrinth.com/`:
-
-```json
-{
-  "about": "Welcome traveler!",
-  "documentation": "https://docs.modrinth.com",
-  "name": "modrinth-labrinth",
-  "version": "2.7.0"
-}
-```
-
-If you got a response similar to the one above, you can use the Modrinth API!
-When you want to go live using the production API, use `api.modrinth.com` instead of `staging-api.modrinth.com`.
-
-## Authentication
-This API has two options for authentication: personal access tokens and [OAuth2](https://en.wikipedia.org/wiki/OAuth).
-All tokens are tied to a Modrinth user and use the `Authorization` header of the request.
-
-Example:
-```
-Authorization: mrp_RNtLRSPmGj2pd1v1ubi52nX7TJJM9sznrmwhAuj511oe4t1jAqAQ3D6Wc8Ic
-```
-
-You do not need a token for most requests. Generally speaking, only the following types of requests require a token:
-- those which create data (such as version creation)
-- those which modify data (such as editing a project)
-- those which access private data (such as draft projects, notifications, emails, and payout data)
-
-Each request requiring authentication has a certain scope. For example, to view the email of the user being requested, the token must have the `USER_READ_EMAIL` scope.
-You can find the list of available scopes [on GitHub](https://github.com/modrinth/labrinth/blob/master/src/models/pats.rs#L15). Making a request with an invalid scope will return a 401 error.
-
-Please note that certain scopes and requests cannot be completed with a personal access token or using OAuth.
-For example, deleting a user account can only be done through Modrinth's frontend.
-
-A detailed guide on OAuth has been published in [Modrinth's technical documentation](https://docs.modrinth.com/guide/oauth).
-
-### Personal access tokens
-Personal access tokens (PATs) can be generated in from [the user settings](https://modrinth.com/settings/account).
-
-### GitHub tokens
-For backwards compatibility purposes, some types of GitHub tokens also work for authenticating a user with Modrinth's API, granting all scopes.
-**We urge any application still using GitHub tokens to start using personal access tokens for security and reliability purposes.**
-GitHub tokens will cease to function to authenticate with Modrinth's API as soon as version 3 of the API is made generally available.
-
-## Cross-Origin Resource Sharing
-This API features Cross-Origin Resource Sharing (CORS) implemented in compliance with the [W3C spec](https://www.w3.org/TR/cors/).
-This allows for cross-domain communication from the browser.
-All responses have a wildcard same-origin which makes them completely public and accessible to everyone, including any code on any site.
-
-## Identifiers
-The majority of items you can interact with in the API have a unique eight-digit base62 ID.
-Projects, versions, users, threads, teams, and reports all use this same way of identifying themselves.
-Version files use the sha1 or sha512 file hashes as identifiers.
-
-Each project and user has a friendlier way of identifying them; slugs and usernames, respectively.
-While unique IDs are constant, slugs and usernames can change at any moment.
-If you want to store something in the long term, it is recommended to use the unique ID.
-
-## Ratelimits
-The API has a ratelimit defined per IP. Limits and remaining amounts are given in the response headers.
-- `X-Ratelimit-Limit`: the maximum number of requests that can be made in a minute
-- `X-Ratelimit-Remaining`: the number of requests remaining in the current ratelimit window
-- `X-Ratelimit-Reset`: the time in seconds until the ratelimit window resets
-
-Ratelimits are the same no matter whether you use a token or not.
-The ratelimit is currently 300 requests per minute. If you have a use case requiring a higher limit, please [contact us](mailto:support@modrinth.com).
-
-## User Agents
-To access the Modrinth API, you **must** use provide a uniquely-identifying `User-Agent` header.
-Providing a user agent that only identifies your HTTP client library (such as "okhttp/4.9.3") increases the likelihood that we will block your traffic.
-It is recommended, but not required, to include contact information in your user agent.
-This allows us to contact you if we would like a change in your application's behavior without having to block your traffic.
-- Bad: `User-Agent: okhttp/4.9.3`
-- Good: `User-Agent: project_name`
-- Better: `User-Agent: github_username/project_name/1.56.0`
-- Best: `User-Agent: github_username/project_name/1.56.0 (launcher.com)` or `User-Agent: github_username/project_name/1.56.0 (contact@launcher.com)`
-
-## Versioning
-Modrinth follows a simple pattern for its API versioning.
-In the event of a breaking API change, the API version in the URL path is bumped, and migration steps will be published below.
-
-When an API is no longer the current one, it will immediately be considered deprecated.
-No more support will be provided for API versions older than the current one.
-It will be kept for some time, but this amount of time is not certain.
-
-We will exercise various tactics to get people to update their implementation of our API.
-One example is by adding something like `STOP USING THIS API` to various data returned by the API.
-
-Once an API version is completely deprecated, it will permanently return a 410 error.
-Please ensure your application handles these 410 errors.
-
-### Migrations
-Inside the following spoiler, you will be able to find all changes between versions of the Modrinth API, accompanied by tips and a guide to migrate applications to newer versions.
-
-Here, you can also find changes for [Minotaur](https://github.com/modrinth/minotaur), Modrinth's official Gradle plugin. Major versions of Minotaur directly correspond to major versions of the Modrinth API.
-
-<details><summary>API v1 to API v2</summary>
-
-These bullet points cover most changes in the v2 API, but please note that fields containing `mod` in most contexts have been shifted to `project`.  For example, in the search route, the field `mod_id` was renamed to `project_id`.
-
-- The search route has been moved from `/api/v1/mod` to `/v2/search`
-- New project fields: `project_type` (may be `mod` or `modpack`), `moderation_message` (which has a `message` and `body`), `gallery`
-- New search facet: `project_type`
-- Alphabetical sort removed (it didn't work and is not possible due to limits in MeiliSearch)
-- New search fields: `project_type`, `gallery`
-  - The gallery field is an array of URLs to images that are part of the project's gallery
-- The gallery is a new feature which allows the user to upload images showcasing their mod to the CDN which will be displayed on their mod page
-- Internal change: Any project file uploaded to Modrinth is now validated to make sure it's a valid Minecraft mod, Modpack, etc.
-  - For example, a Forge 1.17 mod with a JAR not containing a mods.toml will not be allowed to be uploaded to Modrinth
-- In project creation, projects may not upload a mod with no versions to review, however they can be saved as a draft
-  - Similarly, for version creation, a version may not be uploaded without any files
-- Donation URLs have been enabled
-- New project status: `archived`. Projects with this status do not appear in search
-- Tags (such as categories, loaders) now have icons (SVGs) and specific project types attached
-- Dependencies have been wiped and replaced with a new system
-- Notifications now have a `type` field, such as `project_update`
-
-Along with this, project subroutes (such as `/v2/project/{id}/version`) now allow the slug to be used as the ID. This is also the case with user routes.
-
-</details><details><summary>Minotaur v1 to Minotaur v2</summary>
-
-Minotaur 2.x introduced a few breaking changes to how your buildscript is formatted.
-
-First, instead of registering your own `publishModrinth` task, Minotaur now automatically creates a `modrinth` task. As such, you can replace the `task publishModrinth(type: TaskModrinthUpload) {` line with just `modrinth {`.
-
-To declare supported Minecraft versions and mod loaders, the `gameVersions` and `loaders` arrays must now be used. The syntax for these are pretty self-explanatory.
-
-Instead of using `releaseType`, you must now use `versionType`. This was actually changed in v1.2.0, but very few buildscripts have moved on from v1.1.0.
-
-Dependencies have been changed to a special DSL. Create a `dependencies` block within the `modrinth` block, and then use `scope.type("project/version")`. For example, `required.project("fabric-api")` adds a required project dependency on Fabric API.
-
-You may now use the slug anywhere that a project ID was previously required.
-
-</details>
-
-
-#### Operations
-
-##### GET /user/{id|username}/notifications
-
-Summary: Get user's notifications
-
-Parameters:
-- `id|username` (path, string, required) - The ID or username of the user
-
-Responses:
-- 200: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /notification/{id}
-
-Summary: Get notification from ID
-
-Parameters:
-- `id` (path, string, required) - The ID of the notification
-
-Responses:
-- 200: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### DELETE /notification/{id}
-
-Summary: Delete notification
-
-Parameters:
-- `id` (path, string, required) - The ID of the notification
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### PATCH /notification/{id}
-
-Summary: Mark notification as read
-
-Parameters:
-- `id` (path, string, required) - The ID of the notification
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /notifications
-
-Summary: Get multiple notifications
-
-Parameters:
-- `ids` (query, string, required) - The IDs of the notifications
-
-Responses:
-- 200: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### DELETE /notifications
-
-Summary: Delete multiple notifications
-
-Parameters:
-- `ids` (query, string, required) - The IDs of the notifications
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### PATCH /notifications
-
-Summary: Mark multiple notifications as read
-
-Parameters:
-- `ids` (query, string, required) - The IDs of the notifications
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-#### Models
-
-- Notification
-- AuthError
-- NotificationAction: An action that can be performed on a notification
-
-## Threads
-
-### Labrinth
-
-Path: `/threads.html`
-Version: v2.7.0/366f528
-
-This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-
-- [cURL](https://curl.se/) (recommended, command-line)
-- [ReqBIN](https://reqbin.com/) (recommended, online)
-- [Postman](https://www.postman.com/downloads/)
-- [Insomnia](https://insomnia.rest/)
-- Your web browser, if you don't need to send headers or a request body
-
-Once you have a working client, you can test that it works by making a `GET` request to `https://staging-api.modrinth.com/`:
-
-```json
-{
-  "about": "Welcome traveler!",
-  "documentation": "https://docs.modrinth.com",
-  "name": "modrinth-labrinth",
-  "version": "2.7.0"
-}
-```
-
-If you got a response similar to the one above, you can use the Modrinth API!
-When you want to go live using the production API, use `api.modrinth.com` instead of `staging-api.modrinth.com`.
-
-## Authentication
-This API has two options for authentication: personal access tokens and [OAuth2](https://en.wikipedia.org/wiki/OAuth).
-All tokens are tied to a Modrinth user and use the `Authorization` header of the request.
-
-Example:
-```
-Authorization: mrp_RNtLRSPmGj2pd1v1ubi52nX7TJJM9sznrmwhAuj511oe4t1jAqAQ3D6Wc8Ic
-```
-
-You do not need a token for most requests. Generally speaking, only the following types of requests require a token:
-- those which create data (such as version creation)
-- those which modify data (such as editing a project)
-- those which access private data (such as draft projects, notifications, emails, and payout data)
-
-Each request requiring authentication has a certain scope. For example, to view the email of the user being requested, the token must have the `USER_READ_EMAIL` scope.
-You can find the list of available scopes [on GitHub](https://github.com/modrinth/labrinth/blob/master/src/models/pats.rs#L15). Making a request with an invalid scope will return a 401 error.
-
-Please note that certain scopes and requests cannot be completed with a personal access token or using OAuth.
-For example, deleting a user account can only be done through Modrinth's frontend.
-
-A detailed guide on OAuth has been published in [Modrinth's technical documentation](https://docs.modrinth.com/guide/oauth).
-
-### Personal access tokens
-Personal access tokens (PATs) can be generated in from [the user settings](https://modrinth.com/settings/account).
-
-### GitHub tokens
-For backwards compatibility purposes, some types of GitHub tokens also work for authenticating a user with Modrinth's API, granting all scopes.
-**We urge any application still using GitHub tokens to start using personal access tokens for security and reliability purposes.**
-GitHub tokens will cease to function to authenticate with Modrinth's API as soon as version 3 of the API is made generally available.
-
-## Cross-Origin Resource Sharing
-This API features Cross-Origin Resource Sharing (CORS) implemented in compliance with the [W3C spec](https://www.w3.org/TR/cors/).
-This allows for cross-domain communication from the browser.
-All responses have a wildcard same-origin which makes them completely public and accessible to everyone, including any code on any site.
-
-## Identifiers
-The majority of items you can interact with in the API have a unique eight-digit base62 ID.
-Projects, versions, users, threads, teams, and reports all use this same way of identifying themselves.
-Version files use the sha1 or sha512 file hashes as identifiers.
-
-Each project and user has a friendlier way of identifying them; slugs and usernames, respectively.
-While unique IDs are constant, slugs and usernames can change at any moment.
-If you want to store something in the long term, it is recommended to use the unique ID.
-
-## Ratelimits
-The API has a ratelimit defined per IP. Limits and remaining amounts are given in the response headers.
-- `X-Ratelimit-Limit`: the maximum number of requests that can be made in a minute
-- `X-Ratelimit-Remaining`: the number of requests remaining in the current ratelimit window
-- `X-Ratelimit-Reset`: the time in seconds until the ratelimit window resets
-
-Ratelimits are the same no matter whether you use a token or not.
-The ratelimit is currently 300 requests per minute. If you have a use case requiring a higher limit, please [contact us](mailto:support@modrinth.com).
-
-## User Agents
-To access the Modrinth API, you **must** use provide a uniquely-identifying `User-Agent` header.
-Providing a user agent that only identifies your HTTP client library (such as "okhttp/4.9.3") increases the likelihood that we will block your traffic.
-It is recommended, but not required, to include contact information in your user agent.
-This allows us to contact you if we would like a change in your application's behavior without having to block your traffic.
-- Bad: `User-Agent: okhttp/4.9.3`
-- Good: `User-Agent: project_name`
-- Better: `User-Agent: github_username/project_name/1.56.0`
-- Best: `User-Agent: github_username/project_name/1.56.0 (launcher.com)` or `User-Agent: github_username/project_name/1.56.0 (contact@launcher.com)`
-
-## Versioning
-Modrinth follows a simple pattern for its API versioning.
-In the event of a breaking API change, the API version in the URL path is bumped, and migration steps will be published below.
-
-When an API is no longer the current one, it will immediately be considered deprecated.
-No more support will be provided for API versions older than the current one.
-It will be kept for some time, but this amount of time is not certain.
-
-We will exercise various tactics to get people to update their implementation of our API.
-One example is by adding something like `STOP USING THIS API` to various data returned by the API.
-
-Once an API version is completely deprecated, it will permanently return a 410 error.
-Please ensure your application handles these 410 errors.
-
-### Migrations
-Inside the following spoiler, you will be able to find all changes between versions of the Modrinth API, accompanied by tips and a guide to migrate applications to newer versions.
-
-Here, you can also find changes for [Minotaur](https://github.com/modrinth/minotaur), Modrinth's official Gradle plugin. Major versions of Minotaur directly correspond to major versions of the Modrinth API.
-
-<details><summary>API v1 to API v2</summary>
-
-These bullet points cover most changes in the v2 API, but please note that fields containing `mod` in most contexts have been shifted to `project`.  For example, in the search route, the field `mod_id` was renamed to `project_id`.
-
-- The search route has been moved from `/api/v1/mod` to `/v2/search`
-- New project fields: `project_type` (may be `mod` or `modpack`), `moderation_message` (which has a `message` and `body`), `gallery`
-- New search facet: `project_type`
-- Alphabetical sort removed (it didn't work and is not possible due to limits in MeiliSearch)
-- New search fields: `project_type`, `gallery`
-  - The gallery field is an array of URLs to images that are part of the project's gallery
-- The gallery is a new feature which allows the user to upload images showcasing their mod to the CDN which will be displayed on their mod page
-- Internal change: Any project file uploaded to Modrinth is now validated to make sure it's a valid Minecraft mod, Modpack, etc.
-  - For example, a Forge 1.17 mod with a JAR not containing a mods.toml will not be allowed to be uploaded to Modrinth
-- In project creation, projects may not upload a mod with no versions to review, however they can be saved as a draft
-  - Similarly, for version creation, a version may not be uploaded without any files
-- Donation URLs have been enabled
-- New project status: `archived`. Projects with this status do not appear in search
-- Tags (such as categories, loaders) now have icons (SVGs) and specific project types attached
-- Dependencies have been wiped and replaced with a new system
-- Notifications now have a `type` field, such as `project_update`
-
-Along with this, project subroutes (such as `/v2/project/{id}/version`) now allow the slug to be used as the ID. This is also the case with user routes.
-
-</details><details><summary>Minotaur v1 to Minotaur v2</summary>
-
-Minotaur 2.x introduced a few breaking changes to how your buildscript is formatted.
-
-First, instead of registering your own `publishModrinth` task, Minotaur now automatically creates a `modrinth` task. As such, you can replace the `task publishModrinth(type: TaskModrinthUpload) {` line with just `modrinth {`.
-
-To declare supported Minecraft versions and mod loaders, the `gameVersions` and `loaders` arrays must now be used. The syntax for these are pretty self-explanatory.
-
-Instead of using `releaseType`, you must now use `versionType`. This was actually changed in v1.2.0, but very few buildscripts have moved on from v1.1.0.
-
-Dependencies have been changed to a special DSL. Create a `dependencies` block within the `modrinth` block, and then use `scope.type("project/version")`. For example, `required.project("fabric-api")` adds a required project dependency on Fabric API.
-
-You may now use the slug anywhere that a project ID was previously required.
-
-</details>
-
-
-#### Operations
-
-##### GET /report
-
-Summary: Get your open reports
-
-Parameters:
-- `count` (query, integer, optional)
-
-Responses:
-- 200: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### POST /report
-
-Summary: Report a project, user, or version
-
-Bring a project, user, or version to the attention of the moderators by reporting it.
-
-Request body: application/json
-
-Responses:
-- 200: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-
-##### GET /report/{id}
-
-Summary: Get report from ID
-
-Parameters:
-- `id` (path, string, required) - The ID of the report
-
-Responses:
-- 200: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### PATCH /report/{id}
-
-Summary: Modify a report
-
-Parameters:
-- `id` (path, string, required) - The ID of the report
-
-Request body: application/json
-
-Responses:
-- 204: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /reports
-
-Summary: Get multiple reports
-
-Parameters:
-- `ids` (query, string, required) - The IDs of the reports
-
-Responses:
-- 200: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /thread/{id}
-
-Summary: Get a thread
-
-Parameters:
-- `id` (path, string, required) - The ID of the thread
-
-Responses:
-- 200: Expected response to a valid request
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### POST /thread/{id}
-
-Summary: Send a text message to a thread
-
-Parameters:
-- `id` (path, string, required) - The ID of the thread
-
-Request body: application/json
-
-Responses:
-- 200: Expected response to a valid request
-- 400: Request was invalid, see given error
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /threads
-
-Summary: Get multiple threads
-
-Parameters:
-- `ids` (query, string, required) - The IDs of the threads
-
-Responses:
-- 200: Expected response to a valid request
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### DELETE /message/{id}
-
-Summary: Delete a thread message
-
-Parameters:
-- `id` (path, string, required) - The ID of the message
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-#### Models
-
-- CreatableReport
-- Report
-- InvalidInputError
-- AuthError
-- Thread
-- ThreadMessageBody: The contents of the message. **Fields will vary depending on message type.**
-- ThreadMessage
-- User
-- EditableUser
-- UserPayoutData: Various data relating to the user's payouts status (you can only see your own)
-
-## Teams
-
-### Labrinth
-
-Path: `/teams.html`
-Version: v2.7.0/366f528
-
-This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-
-- [cURL](https://curl.se/) (recommended, command-line)
-- [ReqBIN](https://reqbin.com/) (recommended, online)
-- [Postman](https://www.postman.com/downloads/)
-- [Insomnia](https://insomnia.rest/)
-- Your web browser, if you don't need to send headers or a request body
-
-Once you have a working client, you can test that it works by making a `GET` request to `https://staging-api.modrinth.com/`:
-
-```json
-{
-  "about": "Welcome traveler!",
-  "documentation": "https://docs.modrinth.com",
-  "name": "modrinth-labrinth",
-  "version": "2.7.0"
-}
-```
-
-If you got a response similar to the one above, you can use the Modrinth API!
-When you want to go live using the production API, use `api.modrinth.com` instead of `staging-api.modrinth.com`.
-
-## Authentication
-This API has two options for authentication: personal access tokens and [OAuth2](https://en.wikipedia.org/wiki/OAuth).
-All tokens are tied to a Modrinth user and use the `Authorization` header of the request.
-
-Example:
-```
-Authorization: mrp_RNtLRSPmGj2pd1v1ubi52nX7TJJM9sznrmwhAuj511oe4t1jAqAQ3D6Wc8Ic
-```
-
-You do not need a token for most requests. Generally speaking, only the following types of requests require a token:
-- those which create data (such as version creation)
-- those which modify data (such as editing a project)
-- those which access private data (such as draft projects, notifications, emails, and payout data)
-
-Each request requiring authentication has a certain scope. For example, to view the email of the user being requested, the token must have the `USER_READ_EMAIL` scope.
-You can find the list of available scopes [on GitHub](https://github.com/modrinth/labrinth/blob/master/src/models/pats.rs#L15). Making a request with an invalid scope will return a 401 error.
-
-Please note that certain scopes and requests cannot be completed with a personal access token or using OAuth.
-For example, deleting a user account can only be done through Modrinth's frontend.
-
-A detailed guide on OAuth has been published in [Modrinth's technical documentation](https://docs.modrinth.com/guide/oauth).
-
-### Personal access tokens
-Personal access tokens (PATs) can be generated in from [the user settings](https://modrinth.com/settings/account).
-
-### GitHub tokens
-For backwards compatibility purposes, some types of GitHub tokens also work for authenticating a user with Modrinth's API, granting all scopes.
-**We urge any application still using GitHub tokens to start using personal access tokens for security and reliability purposes.**
-GitHub tokens will cease to function to authenticate with Modrinth's API as soon as version 3 of the API is made generally available.
-
-## Cross-Origin Resource Sharing
-This API features Cross-Origin Resource Sharing (CORS) implemented in compliance with the [W3C spec](https://www.w3.org/TR/cors/).
-This allows for cross-domain communication from the browser.
-All responses have a wildcard same-origin which makes them completely public and accessible to everyone, including any code on any site.
-
-## Identifiers
-The majority of items you can interact with in the API have a unique eight-digit base62 ID.
-Projects, versions, users, threads, teams, and reports all use this same way of identifying themselves.
-Version files use the sha1 or sha512 file hashes as identifiers.
-
-Each project and user has a friendlier way of identifying them; slugs and usernames, respectively.
-While unique IDs are constant, slugs and usernames can change at any moment.
-If you want to store something in the long term, it is recommended to use the unique ID.
-
-## Ratelimits
-The API has a ratelimit defined per IP. Limits and remaining amounts are given in the response headers.
-- `X-Ratelimit-Limit`: the maximum number of requests that can be made in a minute
-- `X-Ratelimit-Remaining`: the number of requests remaining in the current ratelimit window
-- `X-Ratelimit-Reset`: the time in seconds until the ratelimit window resets
-
-Ratelimits are the same no matter whether you use a token or not.
-The ratelimit is currently 300 requests per minute. If you have a use case requiring a higher limit, please [contact us](mailto:support@modrinth.com).
-
-## User Agents
-To access the Modrinth API, you **must** use provide a uniquely-identifying `User-Agent` header.
-Providing a user agent that only identifies your HTTP client library (such as "okhttp/4.9.3") increases the likelihood that we will block your traffic.
-It is recommended, but not required, to include contact information in your user agent.
-This allows us to contact you if we would like a change in your application's behavior without having to block your traffic.
-- Bad: `User-Agent: okhttp/4.9.3`
-- Good: `User-Agent: project_name`
-- Better: `User-Agent: github_username/project_name/1.56.0`
-- Best: `User-Agent: github_username/project_name/1.56.0 (launcher.com)` or `User-Agent: github_username/project_name/1.56.0 (contact@launcher.com)`
-
-## Versioning
-Modrinth follows a simple pattern for its API versioning.
-In the event of a breaking API change, the API version in the URL path is bumped, and migration steps will be published below.
-
-When an API is no longer the current one, it will immediately be considered deprecated.
-No more support will be provided for API versions older than the current one.
-It will be kept for some time, but this amount of time is not certain.
-
-We will exercise various tactics to get people to update their implementation of our API.
-One example is by adding something like `STOP USING THIS API` to various data returned by the API.
-
-Once an API version is completely deprecated, it will permanently return a 410 error.
-Please ensure your application handles these 410 errors.
-
-### Migrations
-Inside the following spoiler, you will be able to find all changes between versions of the Modrinth API, accompanied by tips and a guide to migrate applications to newer versions.
-
-Here, you can also find changes for [Minotaur](https://github.com/modrinth/minotaur), Modrinth's official Gradle plugin. Major versions of Minotaur directly correspond to major versions of the Modrinth API.
-
-<details><summary>API v1 to API v2</summary>
-
-These bullet points cover most changes in the v2 API, but please note that fields containing `mod` in most contexts have been shifted to `project`.  For example, in the search route, the field `mod_id` was renamed to `project_id`.
-
-- The search route has been moved from `/api/v1/mod` to `/v2/search`
-- New project fields: `project_type` (may be `mod` or `modpack`), `moderation_message` (which has a `message` and `body`), `gallery`
-- New search facet: `project_type`
-- Alphabetical sort removed (it didn't work and is not possible due to limits in MeiliSearch)
-- New search fields: `project_type`, `gallery`
-  - The gallery field is an array of URLs to images that are part of the project's gallery
-- The gallery is a new feature which allows the user to upload images showcasing their mod to the CDN which will be displayed on their mod page
-- Internal change: Any project file uploaded to Modrinth is now validated to make sure it's a valid Minecraft mod, Modpack, etc.
-  - For example, a Forge 1.17 mod with a JAR not containing a mods.toml will not be allowed to be uploaded to Modrinth
-- In project creation, projects may not upload a mod with no versions to review, however they can be saved as a draft
-  - Similarly, for version creation, a version may not be uploaded without any files
-- Donation URLs have been enabled
-- New project status: `archived`. Projects with this status do not appear in search
-- Tags (such as categories, loaders) now have icons (SVGs) and specific project types attached
-- Dependencies have been wiped and replaced with a new system
-- Notifications now have a `type` field, such as `project_update`
-
-Along with this, project subroutes (such as `/v2/project/{id}/version`) now allow the slug to be used as the ID. This is also the case with user routes.
-
-</details><details><summary>Minotaur v1 to Minotaur v2</summary>
-
-Minotaur 2.x introduced a few breaking changes to how your buildscript is formatted.
-
-First, instead of registering your own `publishModrinth` task, Minotaur now automatically creates a `modrinth` task. As such, you can replace the `task publishModrinth(type: TaskModrinthUpload) {` line with just `modrinth {`.
-
-To declare supported Minecraft versions and mod loaders, the `gameVersions` and `loaders` arrays must now be used. The syntax for these are pretty self-explanatory.
-
-Instead of using `releaseType`, you must now use `versionType`. This was actually changed in v1.2.0, but very few buildscripts have moved on from v1.1.0.
-
-Dependencies have been changed to a special DSL. Create a `dependencies` block within the `modrinth` block, and then use `scope.type("project/version")`. For example, `required.project("fabric-api")` adds a required project dependency on Fabric API.
-
-You may now use the slug anywhere that a project ID was previously required.
-
-</details>
-
-
-#### Operations
-
-##### GET /project/{id|slug}/members
-
-Summary: Get a project's team members
-
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
-
-Responses:
-- 200: Expected response to a valid request
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /team/{id}/members
-
-Summary: Get a team's members
-
-Parameters:
-- `id` (path, string, required) - The ID of the team
-
-Responses:
-- 200: Expected response to a valid request
-
-##### POST /team/{id}/members
-
-Summary: Add a user to a team
-
-Parameters:
-- `id` (path, string, required) - The ID of the team
-
-Request body: application/json
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### GET /teams
-
-Summary: Get the members of multiple teams
-
-Parameters:
-- `ids` (query, string, required) - The IDs of the teams
-
-Responses:
-- 200: Expected response to a valid request
-
-##### POST /team/{id}/join
-
-Summary: Join a team
-
-Parameters:
-- `id` (path, string, required) - The ID of the team
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### DELETE /team/{id}/members/{id|username}
-
-Summary: Remove a member from a team
-
-Parameters:
-- `id` (path, string, required) - The ID of the team
-- `id|username` (path, string, required) - The ID or username of the user
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### PATCH /team/{id}/members/{id|username}
-
-Summary: Modify a team member's information
-
-Parameters:
-- `id` (path, string, required) - The ID of the team
-- `id|username` (path, string, required) - The ID or username of the user
-
-Request body: application/json
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-##### PATCH /team/{id}/owner
-
-Summary: Transfer team's ownership to another user
-
-Parameters:
-- `id` (path, string, required) - The ID of the team
-
-Request body: application/json
-
-Responses:
-- 204: Expected response to a valid request
-- 401: Incorrect token scopes or no authorization to access the requested item(s)
-- 404: The requested item(s) were not found or no authorization to access the requested item(s)
-
-#### Models
-
-- TeamMember
-- UserIdentifier
-- AuthError
-- ModifyTeamMemberBody
-- User
-- EditableUser
-- UserPayoutData: Various data relating to the user's payouts status (you can only see your own)
-
-## Tags
-
-### Labrinth
-
-Path: `/tags.html`
-Version: v2.7.0/366f528
-
-This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-
-- [cURL](https://curl.se/) (recommended, command-line)
-- [ReqBIN](https://reqbin.com/) (recommended, online)
-- [Postman](https://www.postman.com/downloads/)
-- [Insomnia](https://insomnia.rest/)
-- Your web browser, if you don't need to send headers or a request body
-
-Once you have a working client, you can test that it works by making a `GET` request to `https://staging-api.modrinth.com/`:
-
-```json
-{
-  "about": "Welcome traveler!",
-  "documentation": "https://docs.modrinth.com",
-  "name": "modrinth-labrinth",
-  "version": "2.7.0"
-}
-```
-
-If you got a response similar to the one above, you can use the Modrinth API!
-When you want to go live using the production API, use `api.modrinth.com` instead of `staging-api.modrinth.com`.
-
-## Authentication
-This API has two options for authentication: personal access tokens and [OAuth2](https://en.wikipedia.org/wiki/OAuth).
-All tokens are tied to a Modrinth user and use the `Authorization` header of the request.
-
-Example:
-```
-Authorization: mrp_RNtLRSPmGj2pd1v1ubi52nX7TJJM9sznrmwhAuj511oe4t1jAqAQ3D6Wc8Ic
-```
-
-You do not need a token for most requests. Generally speaking, only the following types of requests require a token:
-- those which create data (such as version creation)
-- those which modify data (such as editing a project)
-- those which access private data (such as draft projects, notifications, emails, and payout data)
-
-Each request requiring authentication has a certain scope. For example, to view the email of the user being requested, the token must have the `USER_READ_EMAIL` scope.
-You can find the list of available scopes [on GitHub](https://github.com/modrinth/labrinth/blob/master/src/models/pats.rs#L15). Making a request with an invalid scope will return a 401 error.
-
-Please note that certain scopes and requests cannot be completed with a personal access token or using OAuth.
-For example, deleting a user account can only be done through Modrinth's frontend.
-
-A detailed guide on OAuth has been published in [Modrinth's technical documentation](https://docs.modrinth.com/guide/oauth).
-
-### Personal access tokens
-Personal access tokens (PATs) can be generated in from [the user settings](https://modrinth.com/settings/account).
-
-### GitHub tokens
-For backwards compatibility purposes, some types of GitHub tokens also work for authenticating a user with Modrinth's API, granting all scopes.
-**We urge any application still using GitHub tokens to start using personal access tokens for security and reliability purposes.**
-GitHub tokens will cease to function to authenticate with Modrinth's API as soon as version 3 of the API is made generally available.
-
-## Cross-Origin Resource Sharing
-This API features Cross-Origin Resource Sharing (CORS) implemented in compliance with the [W3C spec](https://www.w3.org/TR/cors/).
-This allows for cross-domain communication from the browser.
-All responses have a wildcard same-origin which makes them completely public and accessible to everyone, including any code on any site.
-
-## Identifiers
-The majority of items you can interact with in the API have a unique eight-digit base62 ID.
-Projects, versions, users, threads, teams, and reports all use this same way of identifying themselves.
-Version files use the sha1 or sha512 file hashes as identifiers.
-
-Each project and user has a friendlier way of identifying them; slugs and usernames, respectively.
-While unique IDs are constant, slugs and usernames can change at any moment.
-If you want to store something in the long term, it is recommended to use the unique ID.
-
-## Ratelimits
-The API has a ratelimit defined per IP. Limits and remaining amounts are given in the response headers.
-- `X-Ratelimit-Limit`: the maximum number of requests that can be made in a minute
-- `X-Ratelimit-Remaining`: the number of requests remaining in the current ratelimit window
-- `X-Ratelimit-Reset`: the time in seconds until the ratelimit window resets
-
-Ratelimits are the same no matter whether you use a token or not.
-The ratelimit is currently 300 requests per minute. If you have a use case requiring a higher limit, please [contact us](mailto:support@modrinth.com).
-
-## User Agents
-To access the Modrinth API, you **must** use provide a uniquely-identifying `User-Agent` header.
-Providing a user agent that only identifies your HTTP client library (such as "okhttp/4.9.3") increases the likelihood that we will block your traffic.
-It is recommended, but not required, to include contact information in your user agent.
-This allows us to contact you if we would like a change in your application's behavior without having to block your traffic.
-- Bad: `User-Agent: okhttp/4.9.3`
-- Good: `User-Agent: project_name`
-- Better: `User-Agent: github_username/project_name/1.56.0`
-- Best: `User-Agent: github_username/project_name/1.56.0 (launcher.com)` or `User-Agent: github_username/project_name/1.56.0 (contact@launcher.com)`
-
-## Versioning
-Modrinth follows a simple pattern for its API versioning.
-In the event of a breaking API change, the API version in the URL path is bumped, and migration steps will be published below.
-
-When an API is no longer the current one, it will immediately be considered deprecated.
-No more support will be provided for API versions older than the current one.
-It will be kept for some time, but this amount of time is not certain.
-
-We will exercise various tactics to get people to update their implementation of our API.
-One example is by adding something like `STOP USING THIS API` to various data returned by the API.
-
-Once an API version is completely deprecated, it will permanently return a 410 error.
-Please ensure your application handles these 410 errors.
-
-### Migrations
-Inside the following spoiler, you will be able to find all changes between versions of the Modrinth API, accompanied by tips and a guide to migrate applications to newer versions.
-
-Here, you can also find changes for [Minotaur](https://github.com/modrinth/minotaur), Modrinth's official Gradle plugin. Major versions of Minotaur directly correspond to major versions of the Modrinth API.
-
-<details><summary>API v1 to API v2</summary>
-
-These bullet points cover most changes in the v2 API, but please note that fields containing `mod` in most contexts have been shifted to `project`.  For example, in the search route, the field `mod_id` was renamed to `project_id`.
-
-- The search route has been moved from `/api/v1/mod` to `/v2/search`
-- New project fields: `project_type` (may be `mod` or `modpack`), `moderation_message` (which has a `message` and `body`), `gallery`
-- New search facet: `project_type`
-- Alphabetical sort removed (it didn't work and is not possible due to limits in MeiliSearch)
-- New search fields: `project_type`, `gallery`
-  - The gallery field is an array of URLs to images that are part of the project's gallery
-- The gallery is a new feature which allows the user to upload images showcasing their mod to the CDN which will be displayed on their mod page
-- Internal change: Any project file uploaded to Modrinth is now validated to make sure it's a valid Minecraft mod, Modpack, etc.
-  - For example, a Forge 1.17 mod with a JAR not containing a mods.toml will not be allowed to be uploaded to Modrinth
-- In project creation, projects may not upload a mod with no versions to review, however they can be saved as a draft
-  - Similarly, for version creation, a version may not be uploaded without any files
-- Donation URLs have been enabled
-- New project status: `archived`. Projects with this status do not appear in search
-- Tags (such as categories, loaders) now have icons (SVGs) and specific project types attached
-- Dependencies have been wiped and replaced with a new system
-- Notifications now have a `type` field, such as `project_update`
-
-Along with this, project subroutes (such as `/v2/project/{id}/version`) now allow the slug to be used as the ID. This is also the case with user routes.
-
-</details><details><summary>Minotaur v1 to Minotaur v2</summary>
-
-Minotaur 2.x introduced a few breaking changes to how your buildscript is formatted.
-
-First, instead of registering your own `publishModrinth` task, Minotaur now automatically creates a `modrinth` task. As such, you can replace the `task publishModrinth(type: TaskModrinthUpload) {` line with just `modrinth {`.
-
-To declare supported Minecraft versions and mod loaders, the `gameVersions` and `loaders` arrays must now be used. The syntax for these are pretty self-explanatory.
-
-Instead of using `releaseType`, you must now use `versionType`. This was actually changed in v1.2.0, but very few buildscripts have moved on from v1.1.0.
-
-Dependencies have been changed to a special DSL. Create a `dependencies` block within the `modrinth` block, and then use `scope.type("project/version")`. For example, `required.project("fabric-api")` adds a required project dependency on Fabric API.
-
-You may now use the slug anywhere that a project ID was previously required.
-
-</details>
-
-
-#### Operations
-
-##### GET /tag/category
-
-Summary: Get a list of categories
-
-Gets an array of categories, their icons, and applicable project types
-
-Responses:
-- 200: Expected response to a valid request
-
-##### GET /tag/loader
-
-Summary: Get a list of loaders
-
-Gets an array of loaders, their icons, and supported project types
-
-Responses:
-- 200: Expected response to a valid request
-
-##### GET /tag/game_version
-
-Summary: Get a list of game versions
-
-Gets an array of game versions and information about them
-
-Responses:
-- 200: Expected response to a valid request
-
-##### GET /tag/license
-
-Summary: Get a list of licenses
-
-Deprecated - simply use SPDX IDs.
-
-Responses:
-- 200: Expected response to a valid request
-
-##### GET /tag/license/{id}
-
-Summary: Get the text and title of a license
-
-Parameters:
-- `id` (path, string, required) - The license ID to get the text of
-
-Responses:
-- 200: Expected response to a valid request
-- 400: Request was invalid, see given error
-
-##### GET /tag/donation_platform
-
-Summary: Get a list of donation platforms
-
-Gets an array of donation platforms and information about them
-
-Responses:
-- 200: Expected response to a valid request
-
-##### GET /tag/report_type
-
-Summary: Get a list of report types
-
-Gets an array of valid report types
-
-Responses:
-- 200: Expected response to a valid request
-
-##### GET /tag/project_type
-
-Summary: Get a list of project types
-
-Gets an array of valid project types
-
-Responses:
-- 200: Expected response to a valid request
-
-##### GET /tag/side_type
-
-Summary: Get a list of side types
-
-Gets an array of valid side types
-
-Responses:
-- 200: Expected response to a valid request
-
-#### Models
-
-- CategoryTag
-- LoaderTag
-- GameVersionTag
-- LicenseTag: A short overview of a license
-- License: A full license
-- InvalidInputError
-- DonationPlatformTag
-
-## Misc
-
-### Labrinth
-
-Path: `/misc.html`
-Version: v2.7.0/366f528
-
-This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-
-- [cURL](https://curl.se/) (recommended, command-line)
-- [ReqBIN](https://reqbin.com/) (recommended, online)
-- [Postman](https://www.postman.com/downloads/)
-- [Insomnia](https://insomnia.rest/)
-- Your web browser, if you don't need to send headers or a request body
-
-Once you have a working client, you can test that it works by making a `GET` request to `https://staging-api.modrinth.com/`:
-
-```json
-{
-  "about": "Welcome traveler!",
-  "documentation": "https://docs.modrinth.com",
-  "name": "modrinth-labrinth",
-  "version": "2.7.0"
-}
-```
-
-If you got a response similar to the one above, you can use the Modrinth API!
-When you want to go live using the production API, use `api.modrinth.com` instead of `staging-api.modrinth.com`.
-
-## Authentication
-This API has two options for authentication: personal access tokens and [OAuth2](https://en.wikipedia.org/wiki/OAuth).
-All tokens are tied to a Modrinth user and use the `Authorization` header of the request.
-
-Example:
-```
-Authorization: mrp_RNtLRSPmGj2pd1v1ubi52nX7TJJM9sznrmwhAuj511oe4t1jAqAQ3D6Wc8Ic
-```
-
-You do not need a token for most requests. Generally speaking, only the following types of requests require a token:
-- those which create data (such as version creation)
-- those which modify data (such as editing a project)
-- those which access private data (such as draft projects, notifications, emails, and payout data)
-
-Each request requiring authentication has a certain scope. For example, to view the email of the user being requested, the token must have the `USER_READ_EMAIL` scope.
-You can find the list of available scopes [on GitHub](https://github.com/modrinth/labrinth/blob/master/src/models/pats.rs#L15). Making a request with an invalid scope will return a 401 error.
-
-Please note that certain scopes and requests cannot be completed with a personal access token or using OAuth.
-For example, deleting a user account can only be done through Modrinth's frontend.
-
-A detailed guide on OAuth has been published in [Modrinth's technical documentation](https://docs.modrinth.com/guide/oauth).
-
-### Personal access tokens
-Personal access tokens (PATs) can be generated in from [the user settings](https://modrinth.com/settings/account).
-
-### GitHub tokens
-For backwards compatibility purposes, some types of GitHub tokens also work for authenticating a user with Modrinth's API, granting all scopes.
-**We urge any application still using GitHub tokens to start using personal access tokens for security and reliability purposes.**
-GitHub tokens will cease to function to authenticate with Modrinth's API as soon as version 3 of the API is made generally available.
-
-## Cross-Origin Resource Sharing
-This API features Cross-Origin Resource Sharing (CORS) implemented in compliance with the [W3C spec](https://www.w3.org/TR/cors/).
-This allows for cross-domain communication from the browser.
-All responses have a wildcard same-origin which makes them completely public and accessible to everyone, including any code on any site.
-
-## Identifiers
-The majority of items you can interact with in the API have a unique eight-digit base62 ID.
-Projects, versions, users, threads, teams, and reports all use this same way of identifying themselves.
-Version files use the sha1 or sha512 file hashes as identifiers.
-
-Each project and user has a friendlier way of identifying them; slugs and usernames, respectively.
-While unique IDs are constant, slugs and usernames can change at any moment.
-If you want to store something in the long term, it is recommended to use the unique ID.
-
-## Ratelimits
-The API has a ratelimit defined per IP. Limits and remaining amounts are given in the response headers.
-- `X-Ratelimit-Limit`: the maximum number of requests that can be made in a minute
-- `X-Ratelimit-Remaining`: the number of requests remaining in the current ratelimit window
-- `X-Ratelimit-Reset`: the time in seconds until the ratelimit window resets
-
-Ratelimits are the same no matter whether you use a token or not.
-The ratelimit is currently 300 requests per minute. If you have a use case requiring a higher limit, please [contact us](mailto:support@modrinth.com).
-
-## User Agents
-To access the Modrinth API, you **must** use provide a uniquely-identifying `User-Agent` header.
-Providing a user agent that only identifies your HTTP client library (such as "okhttp/4.9.3") increases the likelihood that we will block your traffic.
-It is recommended, but not required, to include contact information in your user agent.
-This allows us to contact you if we would like a change in your application's behavior without having to block your traffic.
-- Bad: `User-Agent: okhttp/4.9.3`
-- Good: `User-Agent: project_name`
-- Better: `User-Agent: github_username/project_name/1.56.0`
-- Best: `User-Agent: github_username/project_name/1.56.0 (launcher.com)` or `User-Agent: github_username/project_name/1.56.0 (contact@launcher.com)`
-
-## Versioning
-Modrinth follows a simple pattern for its API versioning.
-In the event of a breaking API change, the API version in the URL path is bumped, and migration steps will be published below.
-
-When an API is no longer the current one, it will immediately be considered deprecated.
-No more support will be provided for API versions older than the current one.
-It will be kept for some time, but this amount of time is not certain.
-
-We will exercise various tactics to get people to update their implementation of our API.
-One example is by adding something like `STOP USING THIS API` to various data returned by the API.
-
-Once an API version is completely deprecated, it will permanently return a 410 error.
-Please ensure your application handles these 410 errors.
-
-### Migrations
-Inside the following spoiler, you will be able to find all changes between versions of the Modrinth API, accompanied by tips and a guide to migrate applications to newer versions.
-
-Here, you can also find changes for [Minotaur](https://github.com/modrinth/minotaur), Modrinth's official Gradle plugin. Major versions of Minotaur directly correspond to major versions of the Modrinth API.
-
-<details><summary>API v1 to API v2</summary>
-
-These bullet points cover most changes in the v2 API, but please note that fields containing `mod` in most contexts have been shifted to `project`.  For example, in the search route, the field `mod_id` was renamed to `project_id`.
-
-- The search route has been moved from `/api/v1/mod` to `/v2/search`
-- New project fields: `project_type` (may be `mod` or `modpack`), `moderation_message` (which has a `message` and `body`), `gallery`
-- New search facet: `project_type`
-- Alphabetical sort removed (it didn't work and is not possible due to limits in MeiliSearch)
-- New search fields: `project_type`, `gallery`
-  - The gallery field is an array of URLs to images that are part of the project's gallery
-- The gallery is a new feature which allows the user to upload images showcasing their mod to the CDN which will be displayed on their mod page
-- Internal change: Any project file uploaded to Modrinth is now validated to make sure it's a valid Minecraft mod, Modpack, etc.
-  - For example, a Forge 1.17 mod with a JAR not containing a mods.toml will not be allowed to be uploaded to Modrinth
-- In project creation, projects may not upload a mod with no versions to review, however they can be saved as a draft
-  - Similarly, for version creation, a version may not be uploaded without any files
-- Donation URLs have been enabled
-- New project status: `archived`. Projects with this status do not appear in search
-- Tags (such as categories, loaders) now have icons (SVGs) and specific project types attached
-- Dependencies have been wiped and replaced with a new system
-- Notifications now have a `type` field, such as `project_update`
-
-Along with this, project subroutes (such as `/v2/project/{id}/version`) now allow the slug to be used as the ID. This is also the case with user routes.
-
-</details><details><summary>Minotaur v1 to Minotaur v2</summary>
-
-Minotaur 2.x introduced a few breaking changes to how your buildscript is formatted.
-
-First, instead of registering your own `publishModrinth` task, Minotaur now automatically creates a `modrinth` task. As such, you can replace the `task publishModrinth(type: TaskModrinthUpload) {` line with just `modrinth {`.
-
-To declare supported Minecraft versions and mod loaders, the `gameVersions` and `loaders` arrays must now be used. The syntax for these are pretty self-explanatory.
-
-Instead of using `releaseType`, you must now use `versionType`. This was actually changed in v1.2.0, but very few buildscripts have moved on from v1.1.0.
-
-Dependencies have been changed to a special DSL. Create a `dependencies` block within the `modrinth` block, and then use `scope.type("project/version")`. For example, `required.project("fabric-api")` adds a required project dependency on Fabric API.
-
-You may now use the slug anywhere that a project ID was previously required.
-
-</details>
-
-
-#### Operations
-
-##### GET /updates/{id|slug}/forge_updates.json
-
-Summary: Forge Updates JSON file
-
-If you're a Forge mod developer, your Modrinth mods have an automatically generated `updates.json` using the
-[Forge Update Checker](https://docs.minecraftforge.net/en/latest/misc/updatechecker/).
-
-The only setup is to insert the URL into the `[[mods]]` section of your `mods.toml` file as such:
-
-```toml
-[[mods]]
-# the other stuff here - ID, version, display name, etc.
-updateJSONURL = "https://api.modrinth.com/updates/{slug|ID}/forge_updates.json"
-```
-
-Replace `{slug|id}` with the slug or ID of your project.
-
-Modrinth will handle the rest! When you update your mod, Forge will notify your users that their copy of your mod is out of date.
-
-Make sure that the version format you use for your Modrinth releases is the same as the version format you use in your `mods.toml`.
-If you use a format such as `1.2.3-forge` or `1.2.3+1.19` with your Modrinth releases but your `mods.toml` only has `1.2.3`,
-the update checker may not function properly.
-
-If you're using NeoForge, NeoForge versions will, by default, not appear in the default URL.
-You will need to add `?neoforge=only` to show your NeoForge-only versions, or `?neoforge=include` for both.
-
-```toml
-[[mods]]
-# the other stuff here - ID, version, display name, etc.
-updateJSONURL = "https://api.modrinth.com/updates/{slug|ID}/forge_updates.json?neoforge=only"
-```
-
-
-Parameters:
-- `id|slug` (path, string, required) - The ID or slug of the project
-- `neoforge` (query, string, optional) - Whether to include NeoForge versions. Can be `only` (NeoForge-only versions), `include` (both Forge and NeoForge versions), or omitted (Forge-only versions).
-
-Responses:
-- 200: Expected response to a valid request
-- 400: Invalid request
-
-##### GET /statistics
-
-Summary: Various statistics about this Modrinth instance
-
-Responses:
-- 200: Expected response to a valid request
-
-#### Models
-
-- ForgeUpdates: Mod version information that can be consumed by Forge's update checker
-- InvalidInputError
-- Statistics
-- ForgeUpdateCheckerPromos: A list of the recommended and latest versions for each Minecraft release
+- gist-comment: A comment made to a gist.
+- gist-commit: Gist Commit
+- gist-simple: Gist Simple
+- base-gist: Base Gist
+- nullable-simple-user: A GitHub user.
+- author-association: How the author is associated with the repository.
+- basic-error: Basic Error
+- public-user: Public User
+- gist-history: Gist History
+- simple-user: A GitHub user.
+- validation-error: Validation Error
