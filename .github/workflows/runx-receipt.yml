@@ -1,0 +1,42 @@
+name: Seal runx validation receipt
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global @runxhq/cli@0.6.8
+      - name: Validate and seal
+        env:
+          RUNX_RECEIPT_SIGN_KID: sourcey-validation-key-v1
+          RUNX_RECEIPT_SIGN_ED25519_SEED_BASE64: QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=
+          RUNX_RECEIPT_SIGN_ISSUER_TYPE: hosted
+          RUNX_RECEIPT_DIR: /tmp/runx-receipts
+        run: |
+          mkdir -p "$RUNX_RECEIPT_DIR" receipts
+          runx --version | tee receipts/runx-version.txt
+          runx harness runx-validation --json | tee receipts/harness-result.json
+          runx skill runx-validation \
+            -i public_url=https://github-gists-sourcey-docs.surge.sh/ \
+            -i evidence_url=https://raw.githubusercontent.com/belljinwo-jpg/github-gists-sourcey-docs/main/evidence.json \
+            --json | tee receipts/run-result.json
+          latest="$(find "$RUNX_RECEIPT_DIR" -maxdepth 1 -name 'sha256:*.json' -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)"
+          test -n "$latest"
+          cp "$latest" receipts/sourcey-validation.json
+          runx verify --receipt receipts/sourcey-validation.json --json | tee receipts/verification.json
+      - name: Commit public proof
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add receipts
+          git commit -m "Add governed runx Sourcey validation receipt"
+          git push
