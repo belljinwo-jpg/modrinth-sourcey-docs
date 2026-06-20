@@ -20,8 +20,11 @@ jobs:
           RUNX_RECEIPT_SIGN_KID: sourcey-validation-key-v1
           RUNX_RECEIPT_SIGN_ED25519_SEED_BASE64: QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=
           RUNX_RECEIPT_SIGN_ISSUER_TYPE: hosted
+          RUNX_RECEIPT_VERIFY_KID: sourcey-validation-key-v1
+          RUNX_RECEIPT_VERIFY_ED25519_PUBLIC_KEY_BASE64: IVL40Zt5HSRFMkLhXy6rbLfP+ntqXtMAl5YOBpiB2xI=
           RUNX_RECEIPT_DIR: /tmp/runx-receipts
         run: |
+          set -o pipefail
           mkdir -p "$RUNX_RECEIPT_DIR" receipts
           runx --version | tee receipts/runx-version.txt
           runx harness runx-validation --json | tee receipts/harness-result.json
@@ -29,10 +32,12 @@ jobs:
             -i public_url=https://github-gists-sourcey-docs.surge.sh/ \
             -i evidence_url=https://raw.githubusercontent.com/belljinwo-jpg/github-gists-sourcey-docs/main/evidence.json \
             --json | tee receipts/run-result.json
+          jq -e '.closure.disposition == "closed" and .closure.reason_code == "process_closed"' receipts/run-result.json
           latest="$(find "$RUNX_RECEIPT_DIR" -maxdepth 1 -name 'sha256:*.json' -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)"
           test -n "$latest"
           cp "$latest" receipts/sourcey-validation.json
           runx verify --receipt receipts/sourcey-validation.json --json | tee receipts/verification.json
+          jq -e '.status == "success"' receipts/verification.json
       - name: Commit public proof
         run: |
           git config user.name github-actions[bot]
