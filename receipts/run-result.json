@@ -1,6 +1,6 @@
 {
   "closure": {
-    "closed_at": "2026-06-20T16:02:47.794Z",
+    "closed_at": "2026-06-20T16:05:07.098Z",
     "disposition": "closed",
     "reason_code": "process_closed",
     "summary": "cli-tool default completed"
@@ -20,11 +20,11 @@
       "evidence_url": "https://raw.githubusercontent.com/belljinwo-jpg/github-gists-sourcey-docs/main/evidence.json",
       "observation_count": 9,
       "operation_count": 20,
-      "public_url": "https://github-gists-sourcey-docs.surge.sh/",
+      "public_url": "https://belljinwo-jpg.github.io/",
       "status": "validated"
     },
     "stderr": "",
-    "stdout": "{\"status\":\"validated\",\"public_url\":\"https://github-gists-sourcey-docs.surge.sh/\",\"evidence_url\":\"https://raw.githubusercontent.com/belljinwo-jpg/github-gists-sourcey-docs/main/evidence.json\",\"operation_count\":20,\"observation_count\":9,\"checks\":{\"sourceyBranding\":true,\"operationCoverage\":true,\"evidenceSummary\":true,\"evidenceObservations\":true,\"pinnedCommit\":true,\"permissiveLicense\":true,\"runxVersionRecorded\":true}}\n",
+    "stdout": "{\"status\":\"validated\",\"public_url\":\"https://belljinwo-jpg.github.io/\",\"evidence_url\":\"https://raw.githubusercontent.com/belljinwo-jpg/github-gists-sourcey-docs/main/evidence.json\",\"operation_count\":20,\"observation_count\":9,\"checks\":{\"sourceyBranding\":true,\"operationCoverage\":true,\"evidenceSummary\":true,\"evidenceObservations\":true,\"pinnedCommit\":true,\"permissiveLicense\":true,\"runxVersionRecorded\":true}}\n",
     "structured_output": {
       "checks": {
         "evidenceObservations": true,
@@ -38,7 +38,7 @@
       "evidence_url": "https://raw.githubusercontent.com/belljinwo-jpg/github-gists-sourcey-docs/main/evidence.json",
       "observation_count": 9,
       "operation_count": 20,
-      "public_url": "https://github-gists-sourcey-docs.surge.sh/",
+      "public_url": "https://belljinwo-jpg.github.io/",
       "status": "validated"
     }
   },
@@ -55,7 +55,7 @@
     "evidence_url": "https://raw.githubusercontent.com/belljinwo-jpg/github-gists-sourcey-docs/main/evidence.json",
     "observation_count": 9,
     "operation_count": 20,
-    "public_url": "https://github-gists-sourcey-docs.surge.sh/",
+    "public_url": "https://belljinwo-jpg.github.io/",
     "status": "validated"
   },
   "receipt": {
@@ -63,7 +63,7 @@
       {
         "artifact_refs": [],
         "closure": {
-          "closed_at": "2026-06-20T16:02:47.794Z",
+          "closed_at": "2026-06-20T16:05:07.098Z",
           "disposition": "closed",
           "reason_code": "process_exit",
           "summary": "cli-tool exited successfully"
@@ -118,7 +118,7 @@
       "terms": []
     },
     "canonicalization": "runx.receipt.c14n.v1",
-    "created_at": "2026-06-20T16:02:47.794Z",
+    "created_at": "2026-06-20T16:05:07.098Z",
     "decisions": [
       {
         "artifact_refs": [],
@@ -146,12 +146,12 @@
         "selected_harness_ref": null
       }
     ],
-    "digest": "sha256:6f67c2a690474435ed07f791ae2cd263566169fba7342f76248404f7d0ffdc0d",
-    "id": "sha256:88d475de70257607c2138a66b2eb970dcfb3fcdabf7203db48cfbbfeeaf54ed5",
+    "digest": "sha256:a650165cd20d1e7d83be6ffdff5674642e9478a0f2119e4bc4adf7d7bebfcb3d",
+    "id": "sha256:af5b4f7a13a122ee437b529ff83d7e8e3258f1a9183026dc143193114f695fbc",
     "idempotency": {
-      "content_hash": "sha256:run_default_313026c441c4-default-content",
-      "intent_key": "sha256:run_default_313026c441c4-default-intent",
-      "trigger_fingerprint": "sha256:run_default_313026c441c4-default-trigger"
+      "content_hash": "sha256:run_default_67e21d19ac6d-default-content",
+      "intent_key": "sha256:run_default_67e21d19ac6d-default-intent",
+      "trigger_fingerprint": "sha256:run_default_67e21d19ac6d-default-trigger"
     },
     "issuer": {
       "kid": "sourcey-validation-key-v1",
@@ -164,7 +164,7 @@
     },
     "schema": "runx.receipt.v1",
     "seal": {
-      "closed_at": "2026-06-20T16:02:47.794Z",
+      "closed_at": "2026-06-20T16:05:07.098Z",
       "criteria": [
         {
           "criterion_id": "process_exit",
@@ -175,26 +175,26 @@
         }
       ],
       "disposition": "closed",
-      "last_observed_at": "2026-06-20T16:02:47.794Z",
+      "last_observed_at": "2026-06-20T16:05:07.098Z",
       "reason_code": "process_closed",
       "summary": "cli-tool default completed"
     },
     "signals": [],
     "signature": {
       "alg": "Ed25519",
-      "value": "base64:RyLy5btNycj_nJH8kmY7K1DXY9YdER5T9FdZZxZbO9dQPbWAnZ-UF0Tkw-_-JmRwBLHA4RqDspgvX1sPqdyMAw"
+      "value": "base64:xyaoMyBnOoyDeLo5p5QK3OTySa9BecWnDt83zWiqyx-znlgS_Z6vRLLwNmznT0xD9nBnztIgLwVizqwI4o7sBg"
     },
     "subject": {
       "commitments": [],
       "kind": "skill",
       "ref": {
         "type": "harness",
-        "uri": "hrn_run_default_313026c441c4_default"
+        "uri": "hrn_run_default_67e21d19ac6d_default"
       }
     }
   },
-  "receipt_id": "sha256:88d475de70257607c2138a66b2eb970dcfb3fcdabf7203db48cfbbfeeaf54ed5",
-  "run_id": "run_default_313026c441c4",
+  "receipt_id": "sha256:af5b4f7a13a122ee437b529ff83d7e8e3258f1a9183026dc143193114f695fbc",
+  "run_id": "run_default_67e21d19ac6d",
   "schema": "runx.skill_run.v1",
   "skill_name": "sourcey-validation",
   "status": "sealed"
