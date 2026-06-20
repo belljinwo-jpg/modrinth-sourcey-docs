@@ -2,10 +2,11 @@
   "name": "modrinth-sourcey-docs",
   "private": true,
   "scripts": {
-    "build": "sourcey build"
+    "build": "node scripts/split-openapi.mjs && sourcey build && node scripts/minify.mjs"
   },
   "dependencies": {
     "consola": "^3.4.2",
+    "html-minifier-terser": "^7.2.0",
     "js-yaml": "^4.1.0",
     "sourcey": "3.6.3"
   }

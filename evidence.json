@@ -1,10 +1,6 @@
 {
   "schema_version": "1.0",
-  "generator": {
-    "name": "Sourcey",
-    "version": "3.6.3",
-    "adapter": "OpenAPI"
-  },
+  "generator": { "name": "Sourcey", "version": "3.6.3", "adapter": "OpenAPI" },
   "library": {
     "name": "Modrinth API (Labrinth)",
     "repository": "https://github.com/modrinth/code",
@@ -17,7 +13,8 @@
   "coverage": {
     "path_count": 55,
     "operation_count": 77,
-    "search_index_entries": 136,
+    "search_index_entries": 189,
+    "generated_reference_pages": 10,
     "minimum_required_operations": 20
   },
   "build": {
@@ -26,32 +23,26 @@
     "source_spec_sha256": "67d036ab6336291a79f8449bd4152c818553d1a7165efd80f246634627d9ce90"
   },
   "pages": [
-    {
-      "path": "index.html",
-      "description": "Default entry point for the generated API reference",
-      "sha256": "c59a0f68c8c54bc13d6fdaef10d528571a4505be760744c107a38ae151653505"
-    },
-    {
-      "path": "api-reference.html",
-      "description": "Sourcey API reference containing all 77 operations and models",
-      "sha256": "c59a0f68c8c54bc13d6fdaef10d528571a4505be760744c107a38ae151653505"
-    },
-    {
-      "path": "llms.txt",
-      "description": "Compact machine-readable documentation index",
-      "sha256": "360de534e30e5a6e8946280e19c584d4dedda5de49e4081d184649f0fb3a427f"
-    },
-    {
-      "path": "search-index.json",
-      "description": "Client-side navigation and search index",
-      "sha256": "8d2567279058caaa7fed4672d15ee658cf546af5b2d4143d232028d031054d43"
-    }
+    { "path": "index.html", "sha256": "6c4a9dc4aeb523847800f7434feb0ff14fb9138871cc952199c9279c779959de" },
+    { "path": "projects.html", "operations": 9, "sha256": "39af2a6aced72f7225dffcf14954c1f5573b23ba311f3cf2dd432cfa11daa9ec" },
+    { "path": "project-discovery.html", "operations": 9, "sha256": "ed8430b05b3d88fb179e14d7096d5eb0fdf30408294fb96ea6da006823aaf913" },
+    { "path": "versions.html", "operations": 9, "sha256": "707e0eb85d307afbbe6e5b2912cf6d9e51ffa1bb201acd9a05c8ab36d1a784fc" },
+    { "path": "version-files.html", "operations": 5, "sha256": "a1d00504ec6c3d17c1cc0a243fed6e023b99f1f0891dde2759c3e2fde8f703b1" },
+    { "path": "users.html", "operations": 10, "sha256": "bce78354732a6bc61c17e5e04816a5f23efd1f088087e14dfc10d59df2642011" },
+    { "path": "notifications.html", "operations": 7, "sha256": "9c7b39ce077e174099dc493dc27ccb3d41a40a0f3bff280e64f84b973a506927" },
+    { "path": "threads.html", "operations": 9, "sha256": "d539801382acb1663a9f4c4496c5631c94f32654c8fbc711f15ffe8e67830176" },
+    { "path": "teams.html", "operations": 8, "sha256": "76506c4ec2025b5613129fc9e52eaaa941bc102007dd68e4db6a441e84abf55c" },
+    { "path": "tags.html", "operations": 9, "sha256": "63dba8685c208a2bd4a791529652dcecb6c8965e382199510a31873de0018052" },
+    { "path": "misc.html", "operations": 2, "sha256": "9414b9896e812d953b8ac6e1907a441d1a7c24b369faeb0e1758d0d2889ea76d" },
+    { "path": "llms.txt", "sha256": "81e326aa09ebad7ada54eb7a09b47fecefaa33046db12321e4e23578f3bf16da" },
+    { "path": "search-index.json", "sha256": "2a14ffda7b608ff59e594c5774ec93b784a89f40a91824f70e7475c7cb40dbc0" }
   ],
-  "live_url": null,
+  "live_url": "https://modrinth-sourcey-reference.surge.sh/",
   "verification": {
-    "local_url": "http://127.0.0.1:8765/",
+    "observed_url": "https://modrinth-sourcey-reference.surge.sh/projects.html",
     "observed_title": "Modrinth API Reference - API Reference",
     "working_navigation": true,
+    "browser_verified_at": "2026-06-20T04:31:00Z",
     "first_endpoint": "GET /search",
     "last_endpoint": "GET /statistics"
   }

@@ -2,83 +2,119 @@
 
 > This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
 
-## API Reference
+## Projects
 
-- [Labrinth](/api-reference.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
-- [Search projects](/api-reference.html#operation-search-get): GET /search
-- [Get a project](/api-reference.html#operation-project-id-slug-get): GET /project/{id|slug}
-- [Delete a project](/api-reference.html#operation-project-id-slug-delete): DELETE /project/{id|slug}
-- [Modify a project](/api-reference.html#operation-project-id-slug-patch): PATCH /project/{id|slug}
-- [Get multiple projects](/api-reference.html#operation-projects-get): GET /projects
-- [Bulk-edit multiple projects](/api-reference.html#operation-projects-patch): PATCH /projects
-- [Get a list of random projects](/api-reference.html#operation-projects-random-get): GET /projects_random
-- [Create a project](/api-reference.html#operation-project-post): POST /project
-- [Delete project's icon](/api-reference.html#operation-project-id-slug-icon-delete): DELETE /project/{id|slug}/icon
-- [Change project's icon](/api-reference.html#operation-project-id-slug-icon-patch): PATCH /project/{id|slug}/icon - The new icon may be up to 256KiB in size.
-- [Check project slug/ID validity](/api-reference.html#operation-project-id-slug-check-get): GET /project/{id|slug}/check
-- [Add a gallery image](/api-reference.html#operation-project-id-slug-gallery-post): POST /project/{id|slug}/gallery - Modrinth allows you to upload files of up to 5MiB to a project's gallery.
-- [Delete a gallery image](/api-reference.html#operation-project-id-slug-gallery-delete): DELETE /project/{id|slug}/gallery
-- [Modify a gallery image](/api-reference.html#operation-project-id-slug-gallery-patch): PATCH /project/{id|slug}/gallery
-- [Get all of a project's dependencies](/api-reference.html#operation-project-id-slug-dependencies-get): GET /project/{id|slug}/dependencies
-- [Follow a project](/api-reference.html#operation-project-id-slug-follow-post): POST /project/{id|slug}/follow
-- [Unfollow a project](/api-reference.html#operation-project-id-slug-follow-delete): DELETE /project/{id|slug}/follow
-- [Schedule a project](/api-reference.html#operation-project-id-slug-schedule-post): POST /project/{id|slug}/schedule
-- [List project's versions](/api-reference.html#operation-project-id-slug-version-get): GET /project/{id|slug}/version
-- [Get a version](/api-reference.html#operation-version-id-get): GET /version/{id}
-- [Delete a version](/api-reference.html#operation-version-id-delete): DELETE /version/{id}
-- [Modify a version](/api-reference.html#operation-version-id-patch): PATCH /version/{id}
-- [Get a version given a version number or ID](/api-reference.html#operation-project-id-slug-version-id-number-get): GET /project/{id|slug}/version/{id|number} - Please note that, if the version number provided matches multiple versions, only the **oldest matching version** will be returned.
-- [Create a version](/api-reference.html#operation-version-post): POST /version - This route creates a version on an existing project. There must be at least one file attached to each new version, unless the new version's status is `draft`. `.mrpack`, `.jar`, `.zip`, and `.litemod` files are accepted.
-- [Schedule a version](/api-reference.html#operation-version-id-schedule-post): POST /version/{id}/schedule
-- [Get multiple versions](/api-reference.html#operation-versions-get): GET /versions
-- [Add files to version](/api-reference.html#operation-version-id-file-post): POST /version/{id}/file - Project files are attached. `.mrpack` and `.jar` files are accepted.
-- [Get version from hash](/api-reference.html#operation-version-file-hash-get): GET /version_file/{hash}
-- [Delete a file from its hash](/api-reference.html#operation-version-file-hash-delete): DELETE /version_file/{hash}
-- [Latest version of a project from a hash, loader(s), and game version(s)](/api-reference.html#operation-version-file-hash-update-post): POST /version_file/{hash}/update
-- [Get versions from hashes](/api-reference.html#operation-version-files-post): POST /version_files - This is the same as [`/version_file/{hash}`](#operation/versionFromHash) except it accepts multiple hashes.
-- [Latest versions of multiple project from hashes, loader(s), and game version(s)](/api-reference.html#operation-version-files-update-post): POST /version_files/update - This is the same as [`/version_file/{hash}/update`](#operation/getLatestVersionFromHash) except it accepts multiple hashes.
-- [Get a user](/api-reference.html#operation-user-id-username-get): GET /user/{id|username}
-- [Modify a user](/api-reference.html#operation-user-id-username-patch): PATCH /user/{id|username}
-- [Get user from authorization header](/api-reference.html#operation-user-get): GET /user
-- [Get multiple users](/api-reference.html#operation-users-get): GET /users
-- [Remove user's avatar](/api-reference.html#operation-user-id-username-icon-delete): DELETE /user/{id|username}/icon
-- [Change user's avatar](/api-reference.html#operation-user-id-username-icon-patch): PATCH /user/{id|username}/icon - The new avatar may be up to 2MiB in size.
-- [Get user's projects](/api-reference.html#operation-user-id-username-projects-get): GET /user/{id|username}/projects
-- [Get user's followed projects](/api-reference.html#operation-user-id-username-follows-get): GET /user/{id|username}/follows
-- [Get user's payout history](/api-reference.html#operation-user-id-username-payouts-get): GET /user/{id|username}/payouts
-- [Withdraw payout balance to PayPal or Venmo](/api-reference.html#operation-user-id-username-payouts-post): POST /user/{id|username}/payouts - Warning: certain amounts get withheld for fees. Please do not call this API endpoint without first acknowledging the warnings on the corresponding frontend page.
-- [Get user's notifications](/api-reference.html#operation-user-id-username-notifications-get): GET /user/{id|username}/notifications
-- [Get notification from ID](/api-reference.html#operation-notification-id-get): GET /notification/{id}
-- [Delete notification](/api-reference.html#operation-notification-id-delete): DELETE /notification/{id}
-- [Mark notification as read](/api-reference.html#operation-notification-id-patch): PATCH /notification/{id}
-- [Get multiple notifications](/api-reference.html#operation-notifications-get): GET /notifications
-- [Delete multiple notifications](/api-reference.html#operation-notifications-delete): DELETE /notifications
-- [Mark multiple notifications as read](/api-reference.html#operation-notifications-patch): PATCH /notifications
-- [Get your open reports](/api-reference.html#operation-report-get): GET /report
-- [Report a project, user, or version](/api-reference.html#operation-report-post): POST /report - Bring a project, user, or version to the attention of the moderators by reporting it.
-- [Get report from ID](/api-reference.html#operation-report-id-get): GET /report/{id}
-- [Modify a report](/api-reference.html#operation-report-id-patch): PATCH /report/{id}
-- [Get multiple reports](/api-reference.html#operation-reports-get): GET /reports
-- [Get a thread](/api-reference.html#operation-thread-id-get): GET /thread/{id}
-- [Send a text message to a thread](/api-reference.html#operation-thread-id-post): POST /thread/{id}
-- [Get multiple threads](/api-reference.html#operation-threads-get): GET /threads
-- [Delete a thread message](/api-reference.html#operation-message-id-delete): DELETE /message/{id}
-- [Get a project's team members](/api-reference.html#operation-project-id-slug-members-get): GET /project/{id|slug}/members
-- [Get a team's members](/api-reference.html#operation-team-id-members-get): GET /team/{id}/members
-- [Add a user to a team](/api-reference.html#operation-team-id-members-post): POST /team/{id}/members
-- [Get the members of multiple teams](/api-reference.html#operation-teams-get): GET /teams
-- [Join a team](/api-reference.html#operation-team-id-join-post): POST /team/{id}/join
-- [Remove a member from a team](/api-reference.html#operation-team-id-members-id-username-delete): DELETE /team/{id}/members/{id|username}
-- [Modify a team member's information](/api-reference.html#operation-team-id-members-id-username-patch): PATCH /team/{id}/members/{id|username}
-- [Transfer team's ownership to another user](/api-reference.html#operation-team-id-owner-patch): PATCH /team/{id}/owner
-- [Get a list of categories](/api-reference.html#operation-tag-category-get): GET /tag/category - Gets an array of categories, their icons, and applicable project types
-- [Get a list of loaders](/api-reference.html#operation-tag-loader-get): GET /tag/loader - Gets an array of loaders, their icons, and supported project types
-- [Get a list of game versions](/api-reference.html#operation-tag-game-version-get): GET /tag/game_version - Gets an array of game versions and information about them
-- [Get a list of licenses](/api-reference.html#operation-tag-license-get): GET /tag/license - Deprecated - simply use SPDX IDs.
-- [Get the text and title of a license](/api-reference.html#operation-tag-license-id-get): GET /tag/license/{id}
-- [Get a list of donation platforms](/api-reference.html#operation-tag-donation-platform-get): GET /tag/donation_platform - Gets an array of donation platforms and information about them
-- [Get a list of report types](/api-reference.html#operation-tag-report-type-get): GET /tag/report_type - Gets an array of valid report types
-- [Get a list of project types](/api-reference.html#operation-tag-project-type-get): GET /tag/project_type - Gets an array of valid project types
-- [Get a list of side types](/api-reference.html#operation-tag-side-type-get): GET /tag/side_type - Gets an array of valid side types
-- [Forge Updates JSON file](/api-reference.html#operation-updates-id-slug-forge-updates-json-get): GET /updates/{id|slug}/forge_updates.json - If you're a Forge mod developer, your Modrinth mods have an automatically generated `updates.json` using the
-- [Various statistics about this Modrinth instance](/api-reference.html#operation-statistics-get): GET /statistics
+- [Labrinth](/projects.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
+- [Search projects](/projects.html#operation-search-get): GET /search
+- [Get a project](/projects.html#operation-project-id-slug-get): GET /project/{id|slug}
+- [Delete a project](/projects.html#operation-project-id-slug-delete): DELETE /project/{id|slug}
+- [Modify a project](/projects.html#operation-project-id-slug-patch): PATCH /project/{id|slug}
+- [Get multiple projects](/projects.html#operation-projects-get): GET /projects
+- [Bulk-edit multiple projects](/projects.html#operation-projects-patch): PATCH /projects
+- [Get a list of random projects](/projects.html#operation-projects-random-get): GET /projects_random
+- [Create a project](/projects.html#operation-project-post): POST /project
+- [Change project's icon](/projects.html#operation-project-id-slug-icon-patch): PATCH /project/{id|slug}/icon - The new icon may be up to 256KiB in size.
+
+## Project discovery
+
+- [Labrinth](/project-discovery.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
+- [Delete project's icon](/project-discovery.html#operation-project-id-slug-icon-delete): DELETE /project/{id|slug}/icon
+- [Check project slug/ID validity](/project-discovery.html#operation-project-id-slug-check-get): GET /project/{id|slug}/check
+- [Add a gallery image](/project-discovery.html#operation-project-id-slug-gallery-post): POST /project/{id|slug}/gallery - Modrinth allows you to upload files of up to 5MiB to a project's gallery.
+- [Delete a gallery image](/project-discovery.html#operation-project-id-slug-gallery-delete): DELETE /project/{id|slug}/gallery
+- [Modify a gallery image](/project-discovery.html#operation-project-id-slug-gallery-patch): PATCH /project/{id|slug}/gallery
+- [Get all of a project's dependencies](/project-discovery.html#operation-project-id-slug-dependencies-get): GET /project/{id|slug}/dependencies
+- [Follow a project](/project-discovery.html#operation-project-id-slug-follow-post): POST /project/{id|slug}/follow
+- [Unfollow a project](/project-discovery.html#operation-project-id-slug-follow-delete): DELETE /project/{id|slug}/follow
+- [Schedule a project](/project-discovery.html#operation-project-id-slug-schedule-post): POST /project/{id|slug}/schedule
+
+## Versions
+
+- [Labrinth](/versions.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
+- [List project's versions](/versions.html#operation-project-id-slug-version-get): GET /project/{id|slug}/version
+- [Get a version](/versions.html#operation-version-id-get): GET /version/{id}
+- [Delete a version](/versions.html#operation-version-id-delete): DELETE /version/{id}
+- [Modify a version](/versions.html#operation-version-id-patch): PATCH /version/{id}
+- [Get a version given a version number or ID](/versions.html#operation-project-id-slug-version-id-number-get): GET /project/{id|slug}/version/{id|number} - Please note that, if the version number provided matches multiple versions, only the **oldest matching version** will be returned.
+- [Create a version](/versions.html#operation-version-post): POST /version - This route creates a version on an existing project. There must be at least one file attached to each new version, unless the new version's status is `draft`. `.mrpack`, `.jar`, `.zip`, and `.litemod` files are accepted.
+- [Schedule a version](/versions.html#operation-version-id-schedule-post): POST /version/{id}/schedule
+- [Get multiple versions](/versions.html#operation-versions-get): GET /versions
+- [Add files to version](/versions.html#operation-version-id-file-post): POST /version/{id}/file - Project files are attached. `.mrpack` and `.jar` files are accepted.
+
+## Version files
+
+- [Labrinth](/version-files.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
+- [Get version from hash](/version-files.html#operation-version-file-hash-get): GET /version_file/{hash}
+- [Delete a file from its hash](/version-files.html#operation-version-file-hash-delete): DELETE /version_file/{hash}
+- [Latest version of a project from a hash, loader(s), and game version(s)](/version-files.html#operation-version-file-hash-update-post): POST /version_file/{hash}/update
+- [Get versions from hashes](/version-files.html#operation-version-files-post): POST /version_files - This is the same as [`/version_file/{hash}`](#operation/versionFromHash) except it accepts multiple hashes.
+- [Latest versions of multiple project from hashes, loader(s), and game version(s)](/version-files.html#operation-version-files-update-post): POST /version_files/update - This is the same as [`/version_file/{hash}/update`](#operation/getLatestVersionFromHash) except it accepts multiple hashes.
+
+## Users
+
+- [Labrinth](/users.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
+- [Get a user](/users.html#operation-user-id-username-get): GET /user/{id|username}
+- [Modify a user](/users.html#operation-user-id-username-patch): PATCH /user/{id|username}
+- [Get user from authorization header](/users.html#operation-user-get): GET /user
+- [Get multiple users](/users.html#operation-users-get): GET /users
+- [Remove user's avatar](/users.html#operation-user-id-username-icon-delete): DELETE /user/{id|username}/icon
+- [Change user's avatar](/users.html#operation-user-id-username-icon-patch): PATCH /user/{id|username}/icon - The new avatar may be up to 2MiB in size.
+- [Get user's projects](/users.html#operation-user-id-username-projects-get): GET /user/{id|username}/projects
+- [Get user's followed projects](/users.html#operation-user-id-username-follows-get): GET /user/{id|username}/follows
+- [Get user's payout history](/users.html#operation-user-id-username-payouts-get): GET /user/{id|username}/payouts
+- [Withdraw payout balance to PayPal or Venmo](/users.html#operation-user-id-username-payouts-post): POST /user/{id|username}/payouts - Warning: certain amounts get withheld for fees. Please do not call this API endpoint without first acknowledging the warnings on the corresponding frontend page.
+
+## Notifications
+
+- [Labrinth](/notifications.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
+- [Get user's notifications](/notifications.html#operation-user-id-username-notifications-get): GET /user/{id|username}/notifications
+- [Get notification from ID](/notifications.html#operation-notification-id-get): GET /notification/{id}
+- [Delete notification](/notifications.html#operation-notification-id-delete): DELETE /notification/{id}
+- [Mark notification as read](/notifications.html#operation-notification-id-patch): PATCH /notification/{id}
+- [Get multiple notifications](/notifications.html#operation-notifications-get): GET /notifications
+- [Delete multiple notifications](/notifications.html#operation-notifications-delete): DELETE /notifications
+- [Mark multiple notifications as read](/notifications.html#operation-notifications-patch): PATCH /notifications
+
+## Threads
+
+- [Labrinth](/threads.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
+- [Get your open reports](/threads.html#operation-report-get): GET /report
+- [Report a project, user, or version](/threads.html#operation-report-post): POST /report - Bring a project, user, or version to the attention of the moderators by reporting it.
+- [Get report from ID](/threads.html#operation-report-id-get): GET /report/{id}
+- [Modify a report](/threads.html#operation-report-id-patch): PATCH /report/{id}
+- [Get multiple reports](/threads.html#operation-reports-get): GET /reports
+- [Get a thread](/threads.html#operation-thread-id-get): GET /thread/{id}
+- [Send a text message to a thread](/threads.html#operation-thread-id-post): POST /thread/{id}
+- [Get multiple threads](/threads.html#operation-threads-get): GET /threads
+- [Delete a thread message](/threads.html#operation-message-id-delete): DELETE /message/{id}
+
+## Teams
+
+- [Labrinth](/teams.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
+- [Get a project's team members](/teams.html#operation-project-id-slug-members-get): GET /project/{id|slug}/members
+- [Get a team's members](/teams.html#operation-team-id-members-get): GET /team/{id}/members
+- [Add a user to a team](/teams.html#operation-team-id-members-post): POST /team/{id}/members
+- [Get the members of multiple teams](/teams.html#operation-teams-get): GET /teams
+- [Join a team](/teams.html#operation-team-id-join-post): POST /team/{id}/join
+- [Remove a member from a team](/teams.html#operation-team-id-members-id-username-delete): DELETE /team/{id}/members/{id|username}
+- [Modify a team member's information](/teams.html#operation-team-id-members-id-username-patch): PATCH /team/{id}/members/{id|username}
+- [Transfer team's ownership to another user](/teams.html#operation-team-id-owner-patch): PATCH /team/{id}/owner
+
+## Tags
+
+- [Labrinth](/tags.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
+- [Get a list of categories](/tags.html#operation-tag-category-get): GET /tag/category - Gets an array of categories, their icons, and applicable project types
+- [Get a list of loaders](/tags.html#operation-tag-loader-get): GET /tag/loader - Gets an array of loaders, their icons, and supported project types
+- [Get a list of game versions](/tags.html#operation-tag-game-version-get): GET /tag/game_version - Gets an array of game versions and information about them
+- [Get a list of licenses](/tags.html#operation-tag-license-get): GET /tag/license - Deprecated - simply use SPDX IDs.
+- [Get the text and title of a license](/tags.html#operation-tag-license-id-get): GET /tag/license/{id}
+- [Get a list of donation platforms](/tags.html#operation-tag-donation-platform-get): GET /tag/donation_platform - Gets an array of donation platforms and information about them
+- [Get a list of report types](/tags.html#operation-tag-report-type-get): GET /tag/report_type - Gets an array of valid report types
+- [Get a list of project types](/tags.html#operation-tag-project-type-get): GET /tag/project_type - Gets an array of valid project types
+- [Get a list of side types](/tags.html#operation-tag-side-type-get): GET /tag/side_type - Gets an array of valid side types
+
+## Misc
+
+- [Labrinth](/misc.html): This documentation doesn't provide a way to test our API. In order to facilitate testing, we recommend the following tools:
+- [Forge Updates JSON file](/misc.html#operation-updates-id-slug-forge-updates-json-get): GET /updates/{id|slug}/forge_updates.json - If you're a Forge mod developer, your Modrinth mods have an automatically generated `updates.json` using the
+- [Various statistics about this Modrinth instance](/misc.html#operation-statistics-get): GET /statistics
